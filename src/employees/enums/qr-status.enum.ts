@@ -1,0 +1,6 @@
+export enum QrStatus {
+  ACTIVE = 'ACTIVE',
+  EXPIRED = 'EXPIRED',
+  REVOKED = 'REVOKED',
+  SUSPENDED = 'SUSPENDED',
+}

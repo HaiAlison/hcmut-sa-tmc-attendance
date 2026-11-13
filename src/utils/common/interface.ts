@@ -1,5 +1,5 @@
 export interface PaginationResponse<T> {
-  otherParams: any;
+  otherParams?: any;
   results: T[];
   offset: number;
   limit: number;

@@ -26,8 +26,8 @@ export const handleError = (e) => {
   if (new RegExp('violates not-null constraint').test(e.message)) {
     throw new HttpException(
       'column ' +
-        e.message.match(/".*"/)[0]?.replace(/"/g, '') +
-        ' can not be null',
+      e.message.match(/".*"/)[0]?.replace(/"/g, '') +
+      ' can not be null',
       HttpStatus.BAD_REQUEST,
       {
         cause: new Error(
@@ -66,24 +66,24 @@ export const removeUnicode = (str: string): string => {
   return str;
 };
 
-export const pagination = async (
-  query?: SelectQueryBuilder<any> | Repository<any>,
+export const pagination = async <T = any>(
+  query?: SelectQueryBuilder<T> | Repository<T>,
   options?: {
     limit?: number;
     offset?: number;
     getRaw?: boolean;
     getAll?: boolean;
   },
-  findManyOptions?: FindManyOptions | FindOptionsWhere<any>,
+  findManyOptions?: FindManyOptions<T> | FindOptionsWhere<T>,
   otherParams?: any,
-): Promise<PaginationResponse<any>> => {
+): Promise<PaginationResponse<T>> => {
   const {
     limit = DEFAULT_LIMIT_NUMBER,
     offset = DEFAULT_PAGE_NUMBER,
     getRaw,
     getAll,
   } = options || {};
-  let results, totalItems;
+  let results: T[], totalItems: number;
   const skip = (offset - 1) * limit;
   if (query instanceof SelectQueryBuilder) {
     if (getAll) query.take(limit).skip(skip);
@@ -101,7 +101,7 @@ export const pagination = async (
       ...findManyOptions,
       take: limit,
       skip,
-      order:{}
+      order: {},
     });
   }
 
@@ -157,9 +157,9 @@ export const sendPost = async (method: Method, url, data, headers = {}) => {
 
 export const cleanObject = (originalObject = {}) => {
   const validArrays = pickBy(
-      originalObject,
-      (e) => Array.isArray(e) && e.length > 0,
-    ),
+    originalObject,
+    (e) => Array.isArray(e) && e.length > 0,
+  ),
     validObjects = pickBy(
       originalObject,
       (e) =>

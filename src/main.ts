@@ -3,20 +3,35 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { GlobalHttpExceptionFilter } from './utils/filters/http-exception.filter';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config: ConfigService = app.get(ConfigService);
 
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  // Global Conventions
+  app.setGlobalPrefix('api/v1');
+  app.use(cookieParser());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+  app.useGlobalFilters(new GlobalHttpExceptionFilter());
+
+  // Swagger Documentation
   const conf = new DocumentBuilder()
-    .setTitle('Boiler plate swagger')
-    .setDescription('The Warehouse API description')
+    .setTitle('TMC Attendance & Access Control API')
+    .setDescription(
+      'REST API for TMC Attendance and Access Control System (Assignment M2)',
+    )
     .setVersion('1.0')
-    .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')
     .addBearerAuth(
       {
-        description: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwidGVuYW50X2lkIjoiOTVjOTgwMzYtNjAzNC00OWRjLWFlNTYtZTlkNDZjODk4ZjJjIiwiY2xpZW50X2lkIjoiNmM1NmY1ZTQtMmRhYy00NzlkLTk2ZmItODEwMTI2MWM4ZTdiIiwiaXNfYWRtaW4iOmZhbHNlLCJ1c2VyX2lkIjoiYzU4NzE2ZjktYTY3Yy00MDU0LTk1MzItOTIzZmQzMTgxN2M0IiwidXNlcl9mdWxsX25hbWUiOiJDw7RuZyBUcuG7qSIsInNjb3BlcyI6ImV2ZW50OnZpZXcsZXZlbnQ6Y3JlYXRlLGV2ZW50OmVkaXQsZXZlbnQ6ZGVsZXRlLGV2ZW50OmhlYXRoX2V2YWx1YXRlOmV4ZWN1dGUiLCJncm91cHMiOlsiZDk5ZDMxM2MtNjQwZS00YWUzLWFmYWQtMmYyZWU2ZTFjZTgyOmJ1Il0sImlhdCI6MTY3NjUyMTE5MiwiZXhwIjoxNjc2NTIxMjUyfQ.QiDuVE_r33KHKi5409iyVpUNdF7u3YdhJ0albJdK2kg",
+        description: 'Enter your JWT access token (e.g. Bearer <token>)',
         name: 'Authorization',
         bearerFormat: 'Bearer',
         scheme: 'Bearer',
@@ -25,12 +40,9 @@ async function bootstrap() {
       },
       'Authorization',
     )
-    .addServer(
-      `/${
-        process.env.NODE_ENV === 'production' ? process.env.SERVICE_NAME : ''
-      }`,
-    )
+    .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')
     .build();
+
   const document = SwaggerModule.createDocument(app, conf);
   SwaggerModule.setup('swagger', app, document, {
     swaggerOptions: {
@@ -38,15 +50,12 @@ async function bootstrap() {
     },
   });
 
-  await app.listen(config.get<number>('PORT'), () => {
-    console.log(
-      '\x1b[36m[WEB]: ',
-      config.get<string>('BASE_URL') + config.get('PORT'),
-    );
-    console.log(
-      '\x1b[36m[SWAGGER]: ',
-      config.get<string>('BASE_URL') + config.get('PORT')+'/swagger',
-    );
+  const port = config.get<number>('PORT', 3001);
+  const baseUrl = config.get<string>('BASE_URL', 'http://localhost:');
+
+  await app.listen(port, () => {
+    console.log(`\x1b[36m[WEB]: ${baseUrl}${port}/api/v1\x1b[0m`);
+    console.log(`\x1b[36m[SWAGGER]: ${baseUrl}${port}/swagger\x1b[0m`);
   });
 }
 bootstrap();

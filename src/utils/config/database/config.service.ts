@@ -11,11 +11,11 @@ require('dotenv').config();
 const config: ConfigService = new ConfigService();
 const dbConfig = {
   type: 'postgres' as const,
-  host: config.get<string>('DATABASE_HOST'),
-  port: config.get<number>('DATABASE_PORT'),
-  database: config.get<string>('DATABASE_NAME'),
-  username: config.get<string>('DATABASE_USER'),
-  password: config.get<string>('DATABASE_PASS'),
+  host: config.get<string>('DATABASE_HOST', 'localhost'),
+  port: config.get<number>('DATABASE_PORT', 5432),
+  database: config.get<string>('DATABASE_NAME', 'tmc-attendance'),
+  username: config.get<string>('DATABASE_USER', 'dzy'),
+  password: config.get<string>('DATABASE_PASS', ''),
   entities: ['dist/**/*.entity.{ts,js}'],
   migrations: ['dist/migrations/*.{ts,js}'],
   migrationsRun: true,
