@@ -3,7 +3,8 @@ import {
   Column,
   Entity,
   OneToMany,
-  PrimaryColumn
+  PrimaryColumn,
+  Unique
 } from 'typeorm';
 import { AttendanceTransactionEntity } from './attendance-transaction.entity';
 import { GateEntity } from './gate.entity';
@@ -13,6 +14,7 @@ import { DepartmentEntity } from './department.entity';
 export type FactoryStatus = 'ACTIVE' | 'INACTIVE';
 
 @Entity('factories')
+@Unique(['code'])
 export class FactoryEntity extends BaseTimeStampEntity {
 
   @Column({ type: 'varchar', length: 150 })

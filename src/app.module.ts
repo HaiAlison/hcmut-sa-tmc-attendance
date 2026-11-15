@@ -12,6 +12,7 @@ import { EmployeesModule } from './employees/employees.module';
 import { QrCodesModule } from './qr-codes/qr-codes.module';
 import { GatesModule } from './gates/gates.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { FactoryModule } from './factory/factory.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AttendanceModule } from './attendance/attendance.module';
     QrCodesModule,
     GatesModule,
     AttendanceModule,
+    FactoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

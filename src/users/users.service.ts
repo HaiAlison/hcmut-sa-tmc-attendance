@@ -1,10 +1,28 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { UserRole } from './enums/user-role.enum';
 import { UserStatus } from './enums/user-status.enum';
 import * as bcrypt from 'bcryptjs';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { ListUsersDto } from './dto/list-users.dto';
+import {
+  PaginatedUsersResponseDto,
+  UserResponseDto,
+} from './dto/user-response.dto';
+import {
+  DEFAULT_LIMIT_NUMBER,
+  DEFAULT_PAGE_NUMBER,
+} from '../utils/common/constant';
+import { pagination } from '../utils/common/handle';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
@@ -16,7 +34,175 @@ export class UsersService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    await this.seedDefaultUsers();
+    await this.seedAdminUser();
+  }
+
+  async seedAdminUser(): Promise<void> {
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@tmc.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'string';
+
+    const existingAdmin = await this.userRepository.findOne({
+      where: { email: adminEmail.toLowerCase() },
+      withDeleted: true,
+    });
+
+    if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      const admin = this.userRepository.create({
+        name: 'Nguyen Van Admin',
+        email: adminEmail.toLowerCase(),
+        password: hashedPassword,
+        role: UserRole.SYSTEM_ADMIN,
+        status: UserStatus.ACTIVE,
+      });
+
+      await this.userRepository.save(admin);
+      this.logger.log(`Seeded default admin user: ${adminEmail}`);
+    }
+
+    // Seed default employee account for testing/demo if not present
+    const empEmail = 'giang.do@tmc.com.vn';
+    const existingEmp = await this.userRepository.findOne({
+      where: { email: empEmail },
+      withDeleted: true,
+    });
+
+    if (!existingEmp) {
+      const hashedEmpPassword = await bcrypt.hash('admin123', 10);
+      const empUser = this.userRepository.create({
+        name: 'Giang Do',
+        email: empEmail,
+        password: hashedEmpPassword,
+        role: UserRole.EMPLOYEE,
+        status: UserStatus.ACTIVE,
+      });
+
+      await this.userRepository.save(empUser);
+      this.logger.log(`Seeded default test employee user: ${empEmail}`);
+    }
+  }
+
+  async create(dto: CreateUserDto): Promise<UserResponseDto> {
+    const normalizedEmail = dto.email.toLowerCase().trim();
+
+    const existingUser = await this.userRepository.findOne({
+      where: { email: normalizedEmail },
+      withDeleted: true,
+    });
+
+    if (existingUser) {
+      throw new ConflictException(
+        `User with email ${dto.email} already exists`,
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = this.userRepository.create({
+      name: dto.name.trim(),
+      email: normalizedEmail,
+      password: hashedPassword,
+      role: dto.role || UserRole.EMPLOYEE,
+      status: dto.status || UserStatus.ACTIVE,
+      linkedEmployeeId: dto.linkedEmployeeId || null,
+    });
+
+    const saved = await this.userRepository.save(user);
+    return this.toResponseDto(saved);
+  }
+
+  async findAll(params: ListUsersDto): Promise<PaginatedUsersResponseDto> {
+    const page =
+      params.page && params.page > 0
+        ? Number(params.page)
+        : DEFAULT_PAGE_NUMBER;
+    const pageSize =
+      params.pageSize && params.pageSize > 0
+        ? Number(params.pageSize)
+        : DEFAULT_LIMIT_NUMBER;
+
+    const qb = this.userRepository.createQueryBuilder('user');
+    qb.where('user.deleted_at IS NULL');
+
+    if (params.q) {
+      const q = `%${params.q.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(user.name) LIKE :q OR LOWER(user.email) LIKE :q)',
+        { q },
+      );
+    }
+
+    if (params.role) {
+      qb.andWhere('user.role = :role', { role: params.role });
+    }
+
+    if (params.status) {
+      qb.andWhere('user.status = :status', { status: params.status });
+    }
+
+    qb.orderBy('user.id', 'ASC');
+
+    const paginated = await pagination<UserEntity>(qb, {
+      limit: pageSize,
+      offset: page,
+    });
+
+    return {
+      data: paginated.results.map((u) => this.toResponseDto(u)),
+      total: paginated.totalItems,
+      page,
+      pageSize,
+    };
+  }
+
+  async getById(id: string): Promise<UserResponseDto> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return this.toResponseDto(user);
+  }
+
+  async update(id: string, dto: UpdateUserDto): Promise<UserResponseDto> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    if (dto.email && dto.email.toLowerCase() !== user.email.toLowerCase()) {
+      const normalizedEmail = dto.email.toLowerCase().trim();
+      const existing = await this.userRepository.findOne({
+        where: { email: normalizedEmail },
+        withDeleted: true,
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException(
+          `User with email ${dto.email} already exists`,
+        );
+      }
+      user.email = normalizedEmail;
+    }
+
+    if (dto.name) user.name = dto.name.trim();
+    if (dto.role) user.role = dto.role;
+    if (dto.status) user.status = dto.status;
+    if (dto.linkedEmployeeId !== undefined) {
+      user.linkedEmployeeId = dto.linkedEmployeeId;
+    }
+    if (dto.password) {
+      user.password = await bcrypt.hash(dto.password, 10);
+    }
+
+    const updated = await this.userRepository.save(user);
+    return this.toResponseDto(updated);
+  }
+
+  async delete(id: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    await this.userRepository.softDelete(id);
   }
 
   async findByEmail(
@@ -58,91 +244,16 @@ export class UsersService implements OnModuleInit {
     await this.userRepository.update({ id: userId }, { lastLogin: new Date() });
   }
 
-  private async seedDefaultUsers(): Promise<void> {
-    try {
-      const defaultPassword = await bcrypt.hash('admin123', 10);
-      const testPassword = await bcrypt.hash('string', 10);
-
-      const seedUsers: Partial<UserEntity>[] = [
-        {
-          id: 'USR-001',
-          name: 'Nguyen Van Admin',
-          email: 'admin@tmc.com',
-          password: testPassword,
-          role: UserRole.SYSTEM_ADMIN,
-          status: UserStatus.ACTIVE,
-          linkedEmployeeId: 'TMC-BD-0001',
-        },
-        {
-          id: 'USR-002',
-          name: 'Tran Thi Bich',
-          email: 'bich.tran@tmc.com.vn',
-          password: defaultPassword,
-          role: UserRole.HR_STAFF,
-          status: UserStatus.ACTIVE,
-          linkedEmployeeId: 'TMC-BD-0002',
-        },
-        {
-          id: 'USR-003',
-          name: 'Le Van Canh',
-          email: 'canh.le@tmc.com.vn',
-          password: defaultPassword,
-          role: UserRole.SECURITY_GUARD,
-          status: UserStatus.ACTIVE,
-          linkedEmployeeId: 'TMC-BD-0003',
-        },
-        {
-          id: 'USR-004',
-          name: 'Pham Thi Dao',
-          email: 'dao.pham@tmc.com.vn',
-          password: defaultPassword,
-          role: UserRole.PRODUCTION_SUPERVISOR,
-          status: UserStatus.ACTIVE,
-          linkedEmployeeId: 'TMC-LA-0001',
-        },
-        {
-          id: 'USR-005',
-          name: 'Hoang Van Em',
-          email: 'em.hoang@tmc.com.vn',
-          password: defaultPassword,
-          role: UserRole.EXECUTIVE_MANAGEMENT,
-          status: UserStatus.ACTIVE,
-          linkedEmployeeId: 'TMC-BD-0005',
-        },
-        {
-          id: 'USR-006',
-          name: 'Do Thi Giang',
-          email: 'giang.do@tmc.com.vn',
-          password: defaultPassword,
-          role: UserRole.EMPLOYEE,
-          status: UserStatus.ACTIVE,
-          linkedEmployeeId: 'TMC-BD-0006',
-        },
-      ];
-
-      for (const u of seedUsers) {
-        if (!u.email) continue;
-        const existing = await this.findByEmail(u.email);
-        if (!existing) {
-          const newUser = this.userRepository.create(u);
-          await this.userRepository.save(newUser);
-          this.logger.log(`Seeded user: ${u.email} (${u.role})`);
-        } else if (
-          existing.role !== u.role ||
-          existing.linkedEmployeeId !== u.linkedEmployeeId
-        ) {
-          if (u.role) existing.role = u.role;
-          if (u.linkedEmployeeId !== undefined) {
-            existing.linkedEmployeeId = u.linkedEmployeeId;
-          }
-          await this.userRepository.save(existing);
-          this.logger.log(`Updated user: ${u.email} (${u.role})`);
-        }
-      }
-    } catch (err: any) {
-      this.logger.warn(
-        `User seeding skipped or encountered error: ${err.message}`,
-      );
-    }
+  toResponseDto(user: UserEntity): UserResponseDto {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      linkedEmployeeId: user.linkedEmployeeId || null,
+      lastLogin: user.lastLogin || null,
+      createdAt: user.created_at,
+    };
   }
 }

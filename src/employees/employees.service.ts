@@ -3,34 +3,31 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as crypto from 'crypto';
 import { Repository } from 'typeorm';
-import { EmployeeEntity } from '../entities/employee.entity';
-import { QrCodeEntity } from '../entities/qr-code.entity';
 import { DepartmentEntity } from '../entities/department.entity';
-import { FactoryEntity, FactoryStatus } from '../entities/factory.entity';
-import { pagination } from '../utils/common/handle';
+import { EmployeeEntity } from '../entities/employee.entity';
+import { FactoryEntity } from '../entities/factory.entity';
+import { QrCodeEntity } from '../entities/qr-code.entity';
 import {
   DEFAULT_LIMIT_NUMBER,
   DEFAULT_PAGE_NUMBER,
 } from '../utils/common/constant';
-import { ListEmployeesDto } from './dto/list-employees.dto';
+import { pagination } from '../utils/common/handle';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { UpdateEmploymentStatusDto } from './dto/update-status.dto';
 import {
   EmployeeDetailResponseDto,
   EmployeeResponseDto,
   PaginatedEmployeesResponseDto,
   QrCodeResponseDto,
 } from './dto/employee-response.dto';
+import { ListEmployeesDto } from './dto/list-employees.dto';
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { UpdateEmploymentStatusDto } from './dto/update-status.dto';
 import { EmploymentStatus } from './enums/employment-status.enum';
-import { FactoryCode } from './enums/factory.enum';
 import { QrStatus } from './enums/qr-status.enum';
-import { Gender } from './enums/gender.enum';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class EmployeesService {
@@ -62,7 +59,7 @@ export class EmployeesService {
           : DEFAULT_LIMIT_NUMBER;
 
     const qb = this.employeeRepository.createQueryBuilder('employee');
-    qb.where('employee.deletedAt IS NULL');
+    qb.where('employee.deleted_at IS NULL');
 
     if (params.q) {
       const q = `%${params.q.trim().toLowerCase()}%`;

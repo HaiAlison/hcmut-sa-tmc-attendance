@@ -4,6 +4,7 @@ import {
   TypeOrmModuleAsyncOptions,
 } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { join } from 'path';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
@@ -38,7 +39,10 @@ const dbConfig = {
 
 export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
   useFactory: async (): Promise<TypeOrmModuleOptions> => {
-    return dbConfig;
+    return {
+      ...dbConfig,
+      autoLoadEntities: true,
+    };
   },
 };
 export default new DataSource(dbConfig);

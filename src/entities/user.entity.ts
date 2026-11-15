@@ -2,10 +2,13 @@ import { BaseTimeStampEntity } from 'src/utils/config/database/base-entity';
 import {
   Column,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryColumn
 } from 'typeorm';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UserStatus } from '../users/enums/user-status.enum';
+import { EmployeeEntity } from './employee.entity';
 
 @Entity('users')
 export class UserEntity extends BaseTimeStampEntity {
@@ -33,8 +36,12 @@ export class UserEntity extends BaseTimeStampEntity {
   })
   status: UserStatus;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ name: 'linked_employee_id', type: 'varchar', nullable: true })
   linkedEmployeeId?: string | null;
+
+  @ManyToOne(() => EmployeeEntity)
+  @JoinColumn({ name: 'linked_employee_id' })
+  employee?: EmployeeEntity;
 
   @Column({ type: 'varchar', length: 255, nullable: true, select: false })
   refreshTokenHash?: string | null;

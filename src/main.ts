@@ -21,7 +21,10 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new GlobalHttpExceptionFilter());
-
+  app.enableCors({
+    origin: process.env.WHITE_LIST_ORIGINS?.split(','), // Port React
+    credentials: true, // Cho phép gửi/nhận cookie
+  });
   // Swagger Documentation
   const conf = new DocumentBuilder()
     .setTitle('TMC Attendance & Access Control API')

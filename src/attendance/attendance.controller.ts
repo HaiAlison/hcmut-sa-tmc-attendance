@@ -49,7 +49,7 @@ export class AttendanceController {
 
   @Get('transactions')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('Authorization')
   @ApiOperation({
     summary: 'Query access transaction logs with full filters and pagination',
   })
@@ -62,7 +62,7 @@ export class AttendanceController {
 
   @Get('transactions/:id')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('Authorization')
   @ApiOperation({ summary: 'Get transaction details by ID' })
   @ApiResponse({ status: 200, type: AttendanceTransactionResponseDto })
   async getTransactionById(
@@ -78,7 +78,7 @@ export class AttendanceController {
     UserRole.HR_STAFF,
     UserRole.PRODUCTION_SUPERVISOR,
   )
-  @ApiBearerAuth()
+  @ApiBearerAuth('Authorization')
   @ApiOperation({
     summary:
       'Aggregated employee daily records (worked/late minutes, status)',
@@ -98,7 +98,7 @@ export class AttendanceController {
     UserRole.EXECUTIVE_MANAGEMENT,
     UserRole.PRODUCTION_SUPERVISOR,
   )
-  @ApiBearerAuth()
+  @ApiBearerAuth('Authorization')
   @ApiOperation({
     summary:
       'Aggregated dashboard KPIs, trends, donuts & factory comparison',

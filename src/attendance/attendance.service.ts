@@ -279,7 +279,7 @@ export class AttendanceService {
 
     // Fetch employees matching filters
     const empQb = this.employeeRepository.createQueryBuilder('employee');
-    empQb.where('employee.deletedAt IS NULL');
+    empQb.where('employee.deleted_at IS NULL');
 
     if (query.factoryId && query.factoryId !== 'ALL') {
       empQb.andWhere('employee.factoryId = :factoryId', {
@@ -293,7 +293,7 @@ export class AttendanceService {
       });
     }
 
-    empQb.orderBy('employee.id', 'ASC');
+    empQb.orderBy('employee.created_at');
 
     const paginatedEmployees = await pagination<EmployeeEntity>(empQb, {
       limit: pageSize,
@@ -412,7 +412,7 @@ export class AttendanceService {
 
     // Employee count
     const empQb = this.employeeRepository.createQueryBuilder('emp');
-    empQb.where('emp.deletedAt IS NULL');
+    empQb.where('emp.deleted_at IS NULL');
     if (factoryId && factoryId !== 'ALL') {
       empQb.andWhere('emp.factoryId = :factoryId', { factoryId });
     }
@@ -460,7 +460,7 @@ export class AttendanceService {
 
     // On-leave count
     const onLeaveQb = this.employeeRepository.createQueryBuilder('emp');
-    onLeaveQb.where('emp.deletedAt IS NULL');
+    onLeaveQb.where('emp.deleted_at IS NULL');
     onLeaveQb.andWhere('emp.employmentStatus = :status', {
       status: EmploymentStatus.ON_LEAVE,
     });
