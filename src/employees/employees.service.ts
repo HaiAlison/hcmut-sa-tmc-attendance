@@ -45,18 +45,8 @@ export class EmployeesService {
   ) {}
 
   async list(params: ListEmployeesDto): Promise<PaginatedEmployeesResponseDto> {
-    const page =
-      params.page && params.page > 0
-        ? Number(params.page)
-        : params.offset && params.offset > 0
-          ? Number(params.offset)
-          : DEFAULT_PAGE_NUMBER;
-    const pageSize =
-      params.pageSize && params.pageSize > 0
-        ? Number(params.pageSize)
-        : params.limit && params.limit > 0
-          ? Number(params.limit)
-          : DEFAULT_LIMIT_NUMBER;
+    const offset = params.offset ?? DEFAULT_PAGE_NUMBER;
+    const limit = params.limit ?? DEFAULT_LIMIT_NUMBER;
 
     const qb = this.employeeRepository.createQueryBuilder('employee');
     qb.where('employee.deleted_at IS NULL');
@@ -90,8 +80,8 @@ export class EmployeesService {
     qb.orderBy('employee.id', 'ASC');
 
     const paginated = await pagination<EmployeeEntity>(qb, {
-      limit: pageSize,
-      offset: page,
+      limit,
+      offset,
     });
 
     const employees = paginated.results;
@@ -119,14 +109,12 @@ export class EmployeesService {
     );
 
     return {
-      data,
-      total: paginated.totalItems,
-      page: paginated.offset,
-      pageSize: paginated.limit,
-      limit: paginated.limit,
       results: data,
+      data,
       totalItems: paginated.totalItems,
+      total: paginated.totalItems,
       offset: paginated.offset,
+      limit: paginated.limit,
       totalPages: paginated.totalPages,
     };
   }
@@ -179,13 +167,25 @@ export class EmployeesService {
     );
 
     // Auto-generate employee ID: TMC-{factoryCode}-{seq}
-    const id = await this.generateNextEmployeeId(factory.code);
-
-    const employee = this.employeeRepository.create({
-      id,
+    const code = await this.generateNextEmployeeId(factory.code);
+    console.log({
+      code,
       fullName: dto.fullName.trim(),
       departmentId: dto.departmentId,
       departmentName,
+      position: dto.position.trim(),
+      factoryId: dto.factoryId,
+      email: dto.email.toLowerCase().trim(),
+      phone: dto.phone.trim(),
+      employmentStatus: EmploymentStatus.PROBATION,
+      hireDate: dto.hireDate,
+      dateOfBirth: dto.dateOfBirth,
+      gender: dto.gender,
+    })
+    const employee = this.employeeRepository.create({
+      code,
+      fullName: dto.fullName.trim(),
+      departmentId: dto.departmentId,
       position: dto.position.trim(),
       factoryId: dto.factoryId,
       email: dto.email.toLowerCase().trim(),
@@ -231,10 +231,6 @@ export class EmployeesService {
 
     if (dto.departmentId) {
       employee.departmentId = dto.departmentId;
-      employee.departmentName = await this.resolveDepartmentName(
-        dto.departmentId,
-        dto.factoryId || employee.factoryId,
-      );
     }
 
     if (dto.position) employee.position = dto.position.trim();
@@ -318,7 +314,7 @@ export class EmployeesService {
     const employees = await this.employeeRepository
       .createQueryBuilder('employee')
       .withDeleted()
-      .where('employee.id LIKE :prefix', { prefix: `${prefix}%` })
+      .where('employee.code LIKE :prefix', { prefix: `${prefix}%` })
       .getMany();
 
     let maxSeq = 0;
@@ -339,13 +335,13 @@ export class EmployeesService {
   private async generateInitialQrCode(
     employee: EmployeeEntity,
   ): Promise<QrCodeEntity> {
-    const qrId = `QR-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    const qrCode = `QR-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
     const tokenUuid = crypto.randomUUID();
     const payload = `tmc://v1/${employee.factoryId.toLowerCase()}/token-${tokenUuid}`;
     const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
     const qr = this.qrCodeRepository.create({
-      id: qrId,
+      code: qrCode,
       employeeId: employee.id,
       factoryId: employee.factoryId,
       status: QrStatus.ACTIVE,
@@ -365,9 +361,6 @@ export class EmployeesService {
     if (factoryId) where.factoryId = factoryId;
     const dept = await this.departmentRepository.findOne({ where });
     if (dept) return dept.name;
-
-    // Derived fallback name from ID (e.g. BD-PROD -> Production)
-    return departmentId.split('-')[1] || departmentId;
   }
 
   private toResponseDto(
@@ -376,9 +369,9 @@ export class EmployeesService {
   ): EmployeeResponseDto {
     return {
       id: emp.id,
+      code: emp.code,
       fullName: emp.fullName,
       departmentId: emp.departmentId,
-      departmentName: emp.departmentName,
       position: emp.position,
       factoryCode: emp.factory.code,
       email: emp.email,

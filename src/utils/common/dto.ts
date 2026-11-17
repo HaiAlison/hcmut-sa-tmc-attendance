@@ -1,9 +1,38 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { AsIntDefaultValue } from './common.decorator';
-import { DEFAULT_LIMIT_NUMBER, DEFAULT_PAGE_NUMBER } from './constant';
-import { Expose, Transform } from 'class-transformer';
+import {
+  DEFAULT_LIMIT_NUMBER,
+  DEFAULT_OFFSET_NUMBER,
+  DEFAULT_PAGE_NUMBER,
+} from './constant';
+import { Expose, Transform, Type } from 'class-transformer';
 import { removeUnicode } from './handle';
+
+export class PaginationQueryDto {
+  @ApiPropertyOptional({
+    description: 'Offset / page number (1-based)',
+    default: DEFAULT_OFFSET_NUMBER,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Expose()
+  offset?: number;
+
+  @ApiPropertyOptional({
+    description: 'Limit / page size (max 100)',
+    default: DEFAULT_LIMIT_NUMBER,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @Expose()
+  limit?: number;
+}
 
 export class CommonDto {
   @ApiPropertyOptional({ default: DEFAULT_PAGE_NUMBER })

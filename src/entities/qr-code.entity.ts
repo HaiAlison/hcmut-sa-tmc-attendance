@@ -15,6 +15,9 @@ import { FactoryEntity } from './factory.entity';
 @Entity('qr_codes')
 export class QrCodeEntity extends BaseTimeStampEntity {
 
+  @Column({ name: 'code', type: 'varchar' })
+  code: string;
+
   @Index()
   @Column({ type: 'varchar' })
   employeeId: string;

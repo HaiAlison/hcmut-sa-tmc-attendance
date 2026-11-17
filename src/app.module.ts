@@ -13,6 +13,7 @@ import { QrCodesModule } from './qr-codes/qr-codes.module';
 import { GatesModule } from './gates/gates.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { FactoryModule } from './factory/factory.module';
+import { DepartmentsModule } from './departments/departments.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { FactoryModule } from './factory/factory.module';
     GatesModule,
     AttendanceModule,
     FactoryModule,
+    DepartmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -65,16 +65,18 @@ describe('QR Codes Management (/qr-codes) (e2e)', () => {
 
       expect(res.body).toHaveProperty('data');
       expect(Array.isArray(res.body.data)).toBe(true);
-      expect(res.body).toHaveProperty('total');
-      expect(res.body).toHaveProperty('page', 1);
+      expect(res.body).toHaveProperty('totalItems');
+      expect(res.body).toHaveProperty('offset', 1);
       expect(res.body).toHaveProperty('limit', 25);
+      expect(res.body).toHaveProperty('results');
+      expect(res.body).toHaveProperty('totalPages');
 
       if (res.body.data.length > 0) {
         testQrId = res.body.data[0].id;
       }
     });
 
-    it('supports utils pagination params (page & limit)', async () => {
+    it('supports utils pagination params (offset & limit)', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/v1/qr-codes?offset=1&limit=2')
         .set('Authorization', `Bearer ${adminToken}`)

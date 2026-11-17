@@ -6,7 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { UserRole } from './enums/user-role.enum';
 import { UserStatus } from './enums/user-status.enum';
@@ -112,13 +112,13 @@ export class UsersService implements OnModuleInit {
   }
 
   async findAll(params: ListUsersDto): Promise<PaginatedUsersResponseDto> {
-    const page =
-      params.page && params.page > 0
-        ? Number(params.page)
+    const offset =
+      params.offset && params.offset > 0
+        ? Number(params.offset)
         : DEFAULT_PAGE_NUMBER;
-    const pageSize =
-      params.pageSize && params.pageSize > 0
-        ? Number(params.pageSize)
+    const limit =
+      params.limit && params.limit > 0
+        ? Number(params.limit)
         : DEFAULT_LIMIT_NUMBER;
 
     const qb = this.userRepository.createQueryBuilder('user');
@@ -143,15 +143,20 @@ export class UsersService implements OnModuleInit {
     qb.orderBy('user.id', 'ASC');
 
     const paginated = await pagination<UserEntity>(qb, {
-      limit: pageSize,
-      offset: page,
+      limit,
+      offset,
     });
 
+    const data = paginated.results.map((u) => this.toResponseDto(u));
+
     return {
-      data: paginated.results.map((u) => this.toResponseDto(u)),
+      results: data,
+      data,
+      totalItems: paginated.totalItems,
       total: paginated.totalItems,
-      page,
-      pageSize,
+      offset: paginated.offset,
+      limit: paginated.limit,
+      totalPages: paginated.totalPages,
     };
   }
 

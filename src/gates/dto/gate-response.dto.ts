@@ -1,9 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { GateStatus, GateType } from '../../entities/gate.entity';
+import { PaginationResponse } from '../../utils/common/interface';
 
 export class GateResponseDto {
   @ApiProperty({ example: 'GATE-BD-01' })
   id: string;
+
+  @ApiProperty({ example: 'GATE-BD-01' })
+  code: string;
 
   @ApiProperty({ example: 'Main Gate 1 (Entry)' })
   name: string;
@@ -32,11 +36,11 @@ export class GateResponseDto {
   @ApiProperty({ example: '2026-11-09T07:15:00.000Z', nullable: true })
   lastHeartbeatAt?: Date | null;
 
-  @ApiProperty({ example: '2026-11-01T00:00:00.000Z' })
-  createdAt: Date;
+  @ApiPropertyOptional({ example: '2026-11-01T00:00:00.000Z' })
+  createdAt?: Date;
 
-  @ApiProperty({ example: '2026-11-09T07:15:00.000Z' })
-  updatedAt: Date;
+  @ApiPropertyOptional({ example: '2026-11-09T07:15:00.000Z' })
+  updatedAt?: Date;
 }
 
 export class GateDailyVolumeDto {
@@ -75,32 +79,24 @@ export class GateDetailResponseDto {
   recentEvents: any[];
 }
 
-export class PaginatedGatesResponseDto {
+export class PaginatedGatesResponseDto
+  implements PaginationResponse<GateResponseDto> {
   @ApiProperty({ type: [GateResponseDto] })
-  data: GateResponseDto[];
+  results: GateResponseDto[];
 
   @ApiProperty({ example: 10 })
-  total: number;
+  totalItems: number;
 
   @ApiProperty({ example: 1 })
-  page: number;
+  offset: number;
 
   @ApiProperty({ example: 25 })
-  pageSize: number;
+  limit: number;
 
-  @ApiProperty({ type: [GateResponseDto], required: false })
-  results?: GateResponseDto[];
+  @ApiProperty({ example: 1 })
+  totalPages: number;
 
-  @ApiProperty({ example: 10, required: false })
-  totalItems?: number;
-
-  @ApiProperty({ example: 1, required: false })
-  offset?: number;
-
-  @ApiProperty({ example: 25, required: false })
-  limit?: number;
-
-  @ApiProperty({ example: 1, required: false })
-  totalPages?: number;
+  @ApiPropertyOptional()
+  otherParams?: any;
 }
 

@@ -1,8 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EmploymentStatus } from '../enums/employment-status.enum';
 import { Gender } from '../enums/gender.enum';
 import { QrStatus } from '../enums/qr-status.enum';
 import { FactoryCode } from '../enums/factory.enum';
+import { PaginationResponse } from '../../utils/common/interface';
 
 export class EmployeeResponseDto {
   @ApiProperty({ example: 'TMC-BD-0001' })
@@ -10,11 +11,12 @@ export class EmployeeResponseDto {
 
   @ApiProperty({ example: 'Nguyen Van An' })
   fullName: string;
+
+  @ApiProperty({ example: 'TMC-BDF-0001' })
+  code: string;
+
   @ApiProperty({ example: 'BD-PROD' })
   departmentId: string;
-
-  @ApiProperty({ example: 'Production' })
-  departmentName: string;
 
   @ApiProperty({ example: 'Senior Assembler' })
   position: string;
@@ -48,33 +50,31 @@ export class EmployeeResponseDto {
   qrStatus: QrStatus | null;
 }
 
-export class PaginatedEmployeesResponseDto {
+export class PaginatedEmployeesResponseDto
+  implements PaginationResponse<EmployeeResponseDto> {
   @ApiProperty({ type: [EmployeeResponseDto] })
-  data: EmployeeResponseDto[];
+  results: EmployeeResponseDto[];
 
   @ApiProperty({ example: 1259 })
-  total: number;
+  totalItems: number;
 
-  @ApiProperty({ example: 1, required: false })
-  page?: number;
+  @ApiProperty({ example: 1 })
+  offset: number;
 
-  @ApiProperty({ example: 25, required: false })
-  pageSize?: number;
+  @ApiProperty({ example: 25 })
+  limit: number;
 
-  @ApiProperty({ type: [EmployeeResponseDto], required: false })
-  results?: EmployeeResponseDto[];
+  @ApiProperty({ example: 51 })
+  totalPages: number;
 
-  @ApiProperty({ example: 1259, required: false })
-  totalItems?: number;
+  @ApiPropertyOptional({ type: [EmployeeResponseDto] })
+  data?: EmployeeResponseDto[];
 
-  @ApiProperty({ example: 1, required: false })
-  offset?: number;
+  @ApiPropertyOptional({ example: 1259 })
+  total?: number;
 
-  @ApiProperty({ example: 25, required: false })
-  limit?: number;
-
-  @ApiProperty({ example: 51, required: false })
-  totalPages?: number;
+  @ApiPropertyOptional()
+  otherParams?: any;
 }
 
 export class QrCodeResponseDto {

@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { QrStatus } from '../../employees/enums/qr-status.enum';
+import { PaginationResponse } from '../../utils/common/interface';
 
 export class QrCodeResponseDto {
   @ApiProperty({ example: 'QR-7B8C9D' })
@@ -29,32 +30,31 @@ export class QrCodeResponseDto {
   payload: string;
 }
 
-export class PaginatedQrCodesResponseDto {
+export class PaginatedQrCodesResponseDto
+  implements PaginationResponse<QrCodeResponseDto>
+{
   @ApiProperty({ type: [QrCodeResponseDto] })
-  data: QrCodeResponseDto[];
+  results: QrCodeResponseDto[];
 
   @ApiProperty({ example: 48 })
-  total: number;
+  totalItems: number;
 
   @ApiProperty({ example: 1 })
-  page: number;
+  offset: number;
 
   @ApiProperty({ example: 25 })
-  pageSize: number;
+  limit: number;
 
-  @ApiProperty({ type: [QrCodeResponseDto], required: false })
-  results?: QrCodeResponseDto[];
+  @ApiProperty({ example: 2 })
+  totalPages: number;
 
-  @ApiProperty({ example: 48, required: false })
-  totalItems?: number;
+  @ApiPropertyOptional({ type: [QrCodeResponseDto] })
+  data?: QrCodeResponseDto[];
 
-  @ApiProperty({ example: 1, required: false })
-  offset?: number;
+  @ApiPropertyOptional({ example: 48 })
+  total?: number;
 
-  @ApiProperty({ example: 25, required: false })
-  limit?: number;
-
-  @ApiProperty({ example: 2, required: false })
-  totalPages?: number;
+  @ApiPropertyOptional()
+  otherParams?: any;
 }
 

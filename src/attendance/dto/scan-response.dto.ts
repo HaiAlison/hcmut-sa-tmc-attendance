@@ -55,32 +55,33 @@ export class ScanResponseDto {
   message: string;
 }
 
-export class PaginatedTransactionsResponseDto {
+import { PaginationResponse } from '../../utils/common/interface';
+
+export class PaginatedTransactionsResponseDto
+  implements PaginationResponse<AttendanceTransactionResponseDto>
+{
   @ApiProperty({ type: [AttendanceTransactionResponseDto] })
-  data: AttendanceTransactionResponseDto[];
+  results: AttendanceTransactionResponseDto[];
 
   @ApiProperty({ example: 450 })
-  total: number;
+  totalItems: number;
 
   @ApiProperty({ example: 1 })
-  page: number;
+  offset: number;
 
   @ApiProperty({ example: 25 })
-  pageSize: number;
+  limit: number;
 
-  @ApiProperty({ type: [AttendanceTransactionResponseDto], required: false })
-  results?: AttendanceTransactionResponseDto[];
+  @ApiProperty({ example: 18 })
+  totalPages: number;
 
-  @ApiProperty({ example: 450, required: false })
-  totalItems?: number;
+  @ApiPropertyOptional({ type: [AttendanceTransactionResponseDto] })
+  data?: AttendanceTransactionResponseDto[];
 
-  @ApiProperty({ example: 1, required: false })
-  offset?: number;
+  @ApiPropertyOptional({ example: 450 })
+  total?: number;
 
-  @ApiProperty({ example: 25, required: false })
-  limit?: number;
-
-  @ApiProperty({ example: 18, required: false })
-  totalPages?: number;
+  @ApiPropertyOptional()
+  otherParams?: any;
 }
 

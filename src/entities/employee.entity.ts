@@ -5,24 +5,31 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  PrimaryColumn
+  Unique,
 } from 'typeorm';
 import { EmploymentStatus } from '../employees/enums/employment-status.enum';
 import { Gender } from '../employees/enums/gender.enum';
 import { QrCodeEntity } from './qr-code.entity';
 import { AttendanceTransactionEntity } from './attendance-transaction.entity';
 import { FactoryEntity } from './factory.entity';
+import { DepartmentEntity } from './department.entity';
 
 @Entity('employees')
+@Unique(['code'])
 export class EmployeeEntity extends BaseTimeStampEntity {
   @Column({ name: 'full_name', type: 'varchar', length: 150 })
   fullName: string;
 
-  @Column({ name: 'department_id', type: 'varchar', length: 32 })
+  @Column({ name: 'code', type: 'varchar' })
+  code: string;
+
+  @ManyToOne(() => DepartmentEntity)
+  @JoinColumn({ name: 'department_id' })
+  department: DepartmentEntity;
+
+  @Column({ name: 'department_id', type: 'varchar' })
   departmentId: string;
 
-  @Column({ name: 'department_name', type: 'varchar', length: 100 })
-  departmentName: string;
 
   @Column({ type: 'varchar', length: 100 })
   position: string;

@@ -30,10 +30,13 @@ describe('EmployeesController', () => {
 
   const mockEmployeesService = {
     list: jest.fn().mockResolvedValue({
+      results: [mockEmployee],
       data: [mockEmployee],
+      totalItems: 1,
       total: 1,
       offset: 1,
       limit: 25,
+      totalPages: 1,
     }),
     getById: jest.fn().mockResolvedValue({
       employee: mockEmployee,
@@ -95,11 +98,11 @@ describe('EmployeesController', () => {
 
   describe('GET /employees', () => {
     it('should return paginated employee list', async () => {
-      const result = await controller.list({ page: 1, pageSize: 25 });
-      expect(service.list).toHaveBeenCalledWith({ page: 1, pageSize: 25 });
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('TMC-BD-0001');
-      expect(result.total).toBe(1);
+      const result = await controller.list({ offset: 1, limit: 25 });
+      expect(service.list).toHaveBeenCalledWith({ offset: 1, limit: 25 });
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].id).toBe('TMC-BD-0001');
+      expect(result.totalItems).toBe(1);
     });
   });
 
@@ -119,6 +122,7 @@ describe('EmployeesController', () => {
         fullName: 'Tran Thi Mai',
         departmentId: 'BD-PROD',
         position: 'Assembly Technician',
+        factoryId: 'factory-uuid-1',
         factoryCode: FactoryCode.BD,
         email: 'mai.tran@tmc.com',
         phone: '+84 912 345 678',

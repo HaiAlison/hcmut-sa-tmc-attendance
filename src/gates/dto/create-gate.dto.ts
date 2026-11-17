@@ -6,7 +6,7 @@ export class CreateGateDto {
   @ApiPropertyOptional({ example: 'GATE-BD-01' })
   @IsOptional()
   @IsString()
-  id?: string;
+  code?: string;
 
   @ApiProperty({ example: 'Main Gate 1 (Entry)' })
   @IsNotEmpty()

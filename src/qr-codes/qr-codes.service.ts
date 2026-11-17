@@ -43,18 +43,14 @@ export class QrCodesService {
   ) {}
 
   async list(params: ListQrCodesDto): Promise<PaginatedQrCodesResponseDto> {
-    const page =
-      params.page && params.page > 0
-        ? Number(params.page)
-        : params.offset && params.offset > 0
-          ? Number(params.offset)
-          : DEFAULT_PAGE_NUMBER;
-    const pageSize =
-      params.pageSize && params.pageSize > 0
-        ? Number(params.pageSize)
-        : params.limit && params.limit > 0
-          ? Number(params.limit)
-          : DEFAULT_LIMIT_NUMBER;
+    const offset =
+      params.offset && params.offset > 0
+        ? Number(params.offset)
+        : DEFAULT_PAGE_NUMBER;
+    const limit =
+      params.limit && params.limit > 0
+        ? Number(params.limit)
+        : DEFAULT_LIMIT_NUMBER;
 
     const qb = this.qrCodeRepository.createQueryBuilder('qr');
 
@@ -77,19 +73,17 @@ export class QrCodesService {
     qb.orderBy('qr.createdAt', 'DESC');
 
     const paginated = await pagination<QrCodeEntity>(qb, {
-      limit: pageSize,
-      offset: page,
+      limit,
+      offset,
     });
 
     const data = paginated.results.map((r) => this.toResponseDto(r));
 
     return {
-      data,
-      total: paginated.totalItems,
-      page: paginated.offset,
-      pageSize: paginated.limit,
       results: data,
+      data,
       totalItems: paginated.totalItems,
+      total: paginated.totalItems,
       offset: paginated.offset,
       limit: paginated.limit,
       totalPages: paginated.totalPages,

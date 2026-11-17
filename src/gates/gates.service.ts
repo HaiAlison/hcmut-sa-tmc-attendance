@@ -39,21 +39,20 @@ export class GatesService {
 
 
   async list(params: ListGatesDto): Promise<PaginatedGatesResponseDto> {
-    const page =
-      params.page && params.page > 0
-        ? Number(params.page)
-        : params.offset && params.offset > 0
-          ? Number(params.offset)
-          : DEFAULT_PAGE_NUMBER;
-    const pageSize =
-      params.pageSize && params.pageSize > 0
-        ? Number(params.pageSize)
-        : params.limit && params.limit > 0
-          ? Number(params.limit)
-          : DEFAULT_LIMIT_NUMBER;
+    const offset =
+      params.offset && params.offset > 0
+        ? Number(params.offset)
+        : DEFAULT_PAGE_NUMBER;
+    const limit =
+      params.limit && params.limit > 0
+        ? Number(params.limit)
+        : DEFAULT_LIMIT_NUMBER;
 
     const qb = this.gateRepository.createQueryBuilder('gate');
 
+    if (params.q) {
+      qb.andWhere('(gate.name ILIKE :q OR gate.code ILIKE :q)', { q: `%${params.q}%` });
+    }
     if (params.factoryId && params.factoryId !== 'ALL') {
       qb.andWhere('gate.factoryId = :factoryId', {
         factoryId: params.factoryId,
@@ -71,17 +70,13 @@ export class GatesService {
     qb.orderBy('gate.id', 'ASC');
 
     const paginated = await pagination<GateEntity>(qb, {
-      limit: pageSize,
-      offset: page,
+      limit,
+      offset,
     });
 
     const data = paginated.results.map((g) => this.toResponseDto(g));
 
     return {
-      data,
-      total: paginated.totalItems,
-      page: paginated.offset,
-      pageSize: paginated.limit,
       results: data,
       totalItems: paginated.totalItems,
       offset: paginated.offset,
@@ -158,24 +153,24 @@ export class GatesService {
   }
 
   async create(dto: CreateGateDto): Promise<GateResponseDto> {
-    let gateId = dto.id;
-    if (!gateId) {
+    let code = dto.code;
+    if (!code) {
       const count = await this.gateRepository.count({
         where: { factoryId: dto.factoryId },
       });
       const seq = String(count + 1).padStart(2, '0');
-      gateId = `GATE-${dto.factoryId}-${seq}`;
+      code = `GATE-${dto.factoryId}-${seq}`;
     }
 
     const existing = await this.gateRepository.findOne({
-      where: { id: gateId },
+      where: { code: code },
     });
     if (existing) {
-      throw new ConflictException(`Gate station ID ${gateId} already exists`);
+      throw new ConflictException(`Gate station code ${code} already exists`);
     }
 
     const gate = this.gateRepository.create({
-      id: gateId,
+      code,
       name: dto.name,
       factoryId: dto.factoryId,
       type: dto.type,
@@ -240,6 +235,7 @@ export class GatesService {
   toResponseDto(gate: GateEntity): GateResponseDto {
     return {
       id: gate.id,
+      code: gate.code,
       name: gate.name,
       factoryId: gate.factoryId,
       type: gate.type,
@@ -249,8 +245,6 @@ export class GatesService {
       macAddress: gate.macAddress ?? null,
       firmwareVersion: gate.firmwareVersion ?? null,
       lastHeartbeatAt: gate.lastHeartbeatAt ?? null,
-      createdAt: new Date(gate.created_at),
-      updatedAt: new Date(gate.updated_at),
     };
   }
 
