@@ -16,14 +16,23 @@ export class AttendanceTransactionResponseDto {
   @ApiPropertyOptional({ example: 'Nguyen Van An', nullable: true })
   employeeName?: string | null;
 
+  @ApiPropertyOptional({ example: 'TMC-BD-0001', nullable: true })
+  employeeCode?: string | null;
+
   @ApiProperty({ example: 'BD' })
   factoryCode: string;
+
+  @ApiPropertyOptional()
+  factoryName?: string;
 
   @ApiProperty({ example: 'GATE-BD-01' })
   gateId: string;
 
   @ApiProperty({ example: 'Main Gate 1 (Entry)' })
   gateName: string;
+
+  @ApiPropertyOptional({ example: 'BD-001' })
+  gateCode?: string;
 
   @ApiProperty({ enum: AttendanceEventType, example: AttendanceEventType.CHECK_IN })
   eventType: AttendanceEventType;
@@ -58,8 +67,7 @@ export class ScanResponseDto {
 import { PaginationResponse } from '../../utils/common/interface';
 
 export class PaginatedTransactionsResponseDto
-  implements PaginationResponse<AttendanceTransactionResponseDto>
-{
+  implements PaginationResponse<AttendanceTransactionResponseDto> {
   @ApiProperty({ type: [AttendanceTransactionResponseDto] })
   results: AttendanceTransactionResponseDto[];
 

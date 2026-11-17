@@ -77,8 +77,6 @@ export class AttendanceService {
    */
   async scan(dto: ScanRequestDto): Promise<ScanResponseDto> {
     const timestamp = new Date();
-    const txId = `TX-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-
     // Lookup Gate
     const gate = await this.gateRepository.findOne({
       where: { id: dto.gateId },
@@ -122,7 +120,6 @@ export class AttendanceService {
 
     // Persist Transaction
     const transaction = this.transactionRepository.create({
-      id: txId,
       employeeId,
       factoryId: factoryId,
       gateId: dto.gateId,
@@ -175,12 +172,18 @@ export class AttendanceService {
         ? Number(params.limit)
         : DEFAULT_LIMIT_NUMBER;
 
-    const qb = this.transactionRepository.createQueryBuilder('tx');
+    const qb = this.transactionRepository.createQueryBuilder('tx')
+      .leftJoin('tx.gate', 'gate')
+      .addSelect(['gate.id', 'gate.code', 'gate.name'])
+      .leftJoin('tx.employee', 'employee')
+      .addSelect(['employee.fullName', 'employee.code'])
+      .leftJoin('employee.factory', 'factory')
+      .addSelect(['factory.code', 'factory.name']);
 
     if (params.q) {
       const q = `%${params.q.trim().toLowerCase()}%`;
       qb.andWhere(
-        '(LOWER(tx.employeeId) LIKE :q OR LOWER(tx.employeeName) LIKE :q OR LOWER(tx.id) LIKE :q OR LOWER(tx.gateName) LIKE :q)',
+        '(LOWER(tx.employeeId) LIKE :q OR LOWER(employee.fullName) LIKE :q OR LOWER(tx.id) LIKE :q OR LOWER(tx.gateName) LIKE :q)',
         { q },
       );
     }
@@ -188,7 +191,7 @@ export class AttendanceService {
     if (params.employeeId) {
       qb.andWhere('tx.employeeId = :employeeId', {
         employeeId: params.employeeId,
-      });
+      })
     }
 
     if (params.gateId) {
@@ -233,9 +236,7 @@ export class AttendanceService {
 
     return {
       results: data,
-      data,
       totalItems: paginated.totalItems,
-      total: paginated.totalItems,
       offset: paginated.offset,
       limit: paginated.limit,
       totalPages: paginated.totalPages,
@@ -651,9 +652,12 @@ export class AttendanceService {
       id: entity.id,
       employeeId: entity.employeeId ?? null,
       employeeName: entity.employee?.fullName ?? null,
+      employeeCode: entity.employee?.code ?? null,
       factoryCode: entity.employee?.factory?.code ?? null,
+      factoryName: entity.employee?.factory?.name ?? null,
       gateId: entity.gateId,
-      gateName: entity.gate?.name,
+      gateCode: entity.gate?.code ?? null,
+      gateName: entity.gate?.name ?? null,
       eventType: entity.eventType,
       timestamp: entity.timestamp,
       qrValidation: entity.qrValidation,

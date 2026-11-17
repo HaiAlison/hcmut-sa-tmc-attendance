@@ -87,15 +87,12 @@ export const pagination = async <T = any>(
   const normalizedOffset = Math.max(1, offset);
   const skip = (normalizedOffset - 1) * limit;
   if (query instanceof SelectQueryBuilder) {
-    if (getAll) query.take(limit).skip(skip);
+    if (!getAll) query.take(limit).skip(skip);
     if (getRaw) {
       results = await query.getRawMany();
       totalItems = results.length;
     } else {
-      [results, totalItems] = await query
-        .take(limit)
-        .skip(skip)
-        .getManyAndCount();
+      [results, totalItems] = await query.getManyAndCount();
     }
   } else {
     [results, totalItems] = await query.findAndCount({

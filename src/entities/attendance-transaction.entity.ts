@@ -48,10 +48,11 @@ export enum SyncStatus {
 export class AttendanceTransactionEntity extends BaseTimeStampEntity {
 
   @Index()
-  @Column({ name: 'employee_id', type: 'varchar', length: 32, nullable: true })
+  @Column({ name: 'employee_id', type: 'uuid', nullable: true })
   employeeId?: string | null;
 
   @ManyToOne(() => EmployeeEntity, (employee) => employee.attendanceTransactions)
+  @JoinColumn({ name: 'employee_id' })
   employee?: EmployeeEntity;
 
   @Column({ name: 'factory_id', type: 'varchar' })

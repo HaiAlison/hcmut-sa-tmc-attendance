@@ -49,7 +49,11 @@ export class EmployeesService {
     const limit = params.limit ?? DEFAULT_LIMIT_NUMBER;
 
     const qb = this.employeeRepository.createQueryBuilder('employee');
-    qb.where('employee.deleted_at IS NULL');
+    qb.where('employee.deleted_at IS NULL')
+      .leftJoin('employee.factory', 'factory')
+      .addSelect(['factory.id', 'factory.name', 'factory.code'])
+      .leftJoin('employee.department', 'department')
+      .addSelect(['department.id', 'department.name']);
 
     if (params.q) {
       const q = `%${params.q.trim().toLowerCase()}%`;
@@ -110,9 +114,7 @@ export class EmployeesService {
 
     return {
       results: data,
-      data,
       totalItems: paginated.totalItems,
-      total: paginated.totalItems,
       offset: paginated.offset,
       limit: paginated.limit,
       totalPages: paginated.totalPages,
@@ -122,6 +124,7 @@ export class EmployeesService {
   async getById(id: string): Promise<EmployeeDetailResponseDto> {
     const employee = await this.employeeRepository.findOne({
       where: { id },
+      relations: ['factory', 'department']
     });
 
     if (!employee) {
