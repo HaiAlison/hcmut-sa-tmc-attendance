@@ -28,10 +28,13 @@ describe('GatesController', () => {
   beforeEach(async () => {
     service = {
       list: jest.fn().mockResolvedValue({
+        results: [mockGate],
         data: [mockGate],
+        totalItems: 1,
         total: 1,
-        page: 1,
-        pageSize: 25,
+        offset: 1,
+        limit: 25,
+        totalPages: 1,
       }),
       getById: jest.fn().mockResolvedValue({
         gate: mockGate,
@@ -79,10 +82,10 @@ describe('GatesController', () => {
 
   describe('GET /gates', () => {
     it('should return paginated gates list', async () => {
-      const result = await controller.list({ page: 1, pageSize: 25 });
-      expect(service.list).toHaveBeenCalledWith({ page: 1, pageSize: 25 });
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('GATE-BD-01');
+      const result = await controller.list({ offset: 1, limit: 25 });
+      expect(service.list).toHaveBeenCalledWith({ offset: 1, limit: 25 });
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].id).toBe('GATE-BD-01');
     });
   });
 

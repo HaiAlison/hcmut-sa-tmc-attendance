@@ -24,10 +24,13 @@ describe('UsersController', () => {
   const mockUsersService = {
     create: jest.fn().mockResolvedValue(mockUserResponse),
     findAll: jest.fn().mockResolvedValue({
+      results: [mockUserResponse],
       data: [mockUserResponse],
+      totalItems: 1,
       total: 1,
-      page: 1,
-      pageSize: 25,
+      offset: 1,
+      limit: 25,
+      totalPages: 1,
     }),
     getById: jest.fn().mockResolvedValue(mockUserResponse),
     update: jest.fn().mockResolvedValue({ ...mockUserResponse, name: 'Updated' }),
@@ -77,9 +80,9 @@ describe('UsersController', () => {
 
   describe('findAll', () => {
     it('should return a paginated list of users', async () => {
-      const query = { page: 1, pageSize: 25 };
+      const query = { offset: 1, limit: 25 };
       const result = await controller.findAll(query);
-      expect(result.data).toHaveLength(1);
+      expect(result.results).toHaveLength(1);
       expect(service.findAll).toHaveBeenCalledWith(query);
     });
   });

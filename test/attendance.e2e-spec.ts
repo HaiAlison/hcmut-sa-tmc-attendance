@@ -12,7 +12,8 @@ describe('Scan Processing & Attendance Transactions (/attendance) (e2e)', () => 
   let supervisorToken: string;
   let validQrPayload: string;
   let createdTxId: string;
-
+  let adminId: string;
+  let supervisorId: string;
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -35,10 +36,10 @@ describe('Scan Processing & Attendance Transactions (/attendance) (e2e)', () => 
     // Login as Admin
     const adminRes = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
-      .send({ email: 'admin@tmc.com', password: 'string' })
+      .send({ email: 'admin@tmc.com', password: process.env.ADMIN_PASSWORD })
       .expect(200);
     adminToken = adminRes.body.accessToken;
-
+    adminId = adminRes.body.user.id;
     // Login as Employee
     const empRes = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
@@ -52,16 +53,16 @@ describe('Scan Processing & Attendance Transactions (/attendance) (e2e)', () => 
       .send({ email: 'dao.pham@tmc.com.vn', password: 'admin123' })
       .expect(200);
     supervisorToken = supRes.body.accessToken;
-
     // Ensure active QR code exists for TMC-BD-0001
+    supervisorId = supRes.body.user.id;
     await request(app.getHttpServer())
       .post('/api/v1/qr-codes/generate')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ employeeId: 'TMC-BD-0001' });
+      .send({ employeeId: supervisorId });
 
     // Fetch valid QR payload for TMC-BD-0001
     const qrRes = await request(app.getHttpServer())
-      .get('/api/v1/qr-codes/employee/TMC-BD-0001')
+      .get(`/api/v1/qr-codes/employee/${supRes.body.user.linkedEmployeeId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validQrPayload = qrRes.body.payload;
@@ -85,7 +86,7 @@ describe('Scan Processing & Attendance Transactions (/attendance) (e2e)', () => 
 
       expect(res.body).toHaveProperty('transaction');
       expect(res.body.transaction.status).toBe('SUCCESS');
-      expect(res.body.transaction.employeeId).toBe('TMC-BD-0001');
+      expect(res.body.transaction.employeeId).toBe(supervisorId);
       expect(res.body.transaction.gateId).toBe('GATE-BD-01');
       expect(res.body.transaction.eventType).toBe('CHECK_IN');
       expect(res.body.transaction.qrValidation).toBe('VALID');
@@ -186,9 +187,11 @@ describe('Scan Processing & Attendance Transactions (/attendance) (e2e)', () => 
       expect(res.body).toHaveProperty('data');
       expect(Array.isArray(res.body.data)).toBe(true);
       expect(res.body.data.length).toBeGreaterThan(0);
-      expect(res.body).toHaveProperty('total');
-      expect(res.body).toHaveProperty('page', 1);
-      expect(res.body).toHaveProperty('pageSize', 25);
+      expect(res.body).toHaveProperty('totalItems');
+      expect(res.body).toHaveProperty('offset', 1);
+      expect(res.body).toHaveProperty('limit', 25);
+      expect(res.body).toHaveProperty('results');
+      expect(res.body).toHaveProperty('totalPages');
     });
 
     it('filters transactions by employeeId and status', async () => {
@@ -264,6 +267,10 @@ describe('Scan Processing & Attendance Transactions (/attendance) (e2e)', () => 
       expect(res.body.kpis).toHaveProperty('totalEmployees');
       expect(res.body.kpis).toHaveProperty('presentToday');
       expect(res.body.kpis).toHaveProperty('gateTrafficToday');
+      expect(res.body).toHaveProperty('trend');
+      expect(res.body).toHaveProperty('distribution');
+      expect(res.body).toHaveProperty('recentEvents');
+      expect(res.body).toHaveProperty('factoryComparison');
       expect(res.body).toHaveProperty('attendanceRate');
       expect(res.body).toHaveProperty('factoryBreakdown');
       expect(res.body).toHaveProperty('gateDistribution');

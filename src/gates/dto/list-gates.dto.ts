@@ -1,11 +1,18 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
+import { PaginationQueryDto } from '../../utils/common/dto';
 
-export class ListGatesDto {
+export class ListGatesDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    description: 'Filter by factory ID (BD, LA, or ALL)',
-    example: 'BD',
+    description: 'Search keyword (gate name)',
+  })
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by factory ID',
+    example: '68fe55cd-02b0-4b90-9277-d3e52c767738',
   })
   @IsOptional()
   @IsString()
@@ -24,38 +31,5 @@ export class ListGatesDto {
   @IsOptional()
   @IsString()
   status?: string;
-
-  @ApiPropertyOptional({ description: 'Page number (1-based)', default: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number;
-
-  @ApiPropertyOptional({
-    description: 'Items per page (max 100)',
-    default: 25,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  pageSize?: number;
-
-  @ApiPropertyOptional({ description: 'Page number alias (offset)', default: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  offset?: number;
-
-  @ApiPropertyOptional({ description: 'Page size alias (limit)', default: 25 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
 }
 

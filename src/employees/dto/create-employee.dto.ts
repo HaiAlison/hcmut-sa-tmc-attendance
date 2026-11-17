@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsString,
+  IsUUID,
   Matches,
 } from 'class-validator';
 import { FactoryCode } from '../enums/factory.enum';
@@ -15,8 +16,8 @@ export class CreateEmployeeDto {
   @IsNotEmpty()
   fullName: string;
 
-  @ApiProperty({ example: 'BD-PROD' })
-  @IsString()
+  @ApiProperty({ example: '00000000-0000-0000-0000-000000000000' })
+  @IsUUID()
   @IsNotEmpty()
   departmentId: string;
 
@@ -26,9 +27,9 @@ export class CreateEmployeeDto {
   position: string;
 
   @ApiProperty()
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
-  factoryId?: string;
+  factoryId: string;
 
   factoryCode: FactoryCode;
 

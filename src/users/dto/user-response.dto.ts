@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '../enums/user-role.enum';
 import { UserStatus } from '../enums/user-status.enum';
+import { PaginationResponse } from '../../utils/common/interface';
 
 export class UserResponseDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -28,17 +29,31 @@ export class UserResponseDto {
   createdAt: Date;
 }
 
-export class PaginatedUsersResponseDto {
+export class PaginatedUsersResponseDto
+  implements PaginationResponse<UserResponseDto>
+{
   @ApiProperty({ type: [UserResponseDto] })
-  data: UserResponseDto[];
+  results: UserResponseDto[];
 
   @ApiProperty({ example: 10 })
-  total: number;
+  totalItems: number;
 
   @ApiProperty({ example: 1 })
-  page: number;
+  offset: number;
 
   @ApiProperty({ example: 25 })
-  pageSize: number;
+  limit: number;
+
+  @ApiProperty({ example: 1 })
+  totalPages: number;
+
+  @ApiPropertyOptional({ type: [UserResponseDto] })
+  data?: UserResponseDto[];
+
+  @ApiPropertyOptional({ example: 10 })
+  total?: number;
+
+  @ApiPropertyOptional()
+  otherParams?: any;
 }
 

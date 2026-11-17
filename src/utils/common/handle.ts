@@ -84,7 +84,8 @@ export const pagination = async <T = any>(
     getAll,
   } = options || {};
   let results: T[], totalItems: number;
-  const skip = (offset - 1) * limit;
+  const normalizedOffset = Math.max(1, offset);
+  const skip = (normalizedOffset - 1) * limit;
   if (query instanceof SelectQueryBuilder) {
     if (getAll) query.take(limit).skip(skip);
     if (getRaw) {
@@ -108,9 +109,11 @@ export const pagination = async <T = any>(
   return {
     ...otherParams,
     results,
-    offset,
+    data: results,
+    offset: normalizedOffset,
     limit,
     totalItems,
+    total: totalItems,
     totalPages: Math.ceil(totalItems / limit),
   };
 };

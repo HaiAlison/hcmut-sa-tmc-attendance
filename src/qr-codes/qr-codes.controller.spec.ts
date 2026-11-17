@@ -24,10 +24,13 @@ describe('QrCodesController', () => {
 
   const mockQrCodesService = {
     list: jest.fn().mockResolvedValue({
+      results: [mockQrCode],
       data: [mockQrCode],
+      totalItems: 1,
       total: 1,
       offset: 1,
       limit: 25,
+      totalPages: 1,
     }),
     getById: jest.fn().mockResolvedValue(mockQrCode),
     getByEmployeeId: jest.fn().mockResolvedValue(mockQrCode),
@@ -74,10 +77,10 @@ describe('QrCodesController', () => {
 
   describe('GET /qr-codes', () => {
     it('should return paginated QR codes list', async () => {
-      const result = await controller.list({ page: 1, pageSize: 25 });
-      expect(service.list).toHaveBeenCalledWith({ page: 1, pageSize: 25 });
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('QR-7B8C9D');
+      const result = await controller.list({ offset: 1, limit: 25 });
+      expect(service.list).toHaveBeenCalledWith({ offset: 1, limit: 25 });
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].id).toBe('QR-7B8C9D');
     });
   });
 

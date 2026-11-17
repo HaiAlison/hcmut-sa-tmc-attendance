@@ -86,13 +86,13 @@ describe('Gate Station Controller (/gates) (e2e)', () => {
       }
     });
 
-    it('supports utils pagination params (page/pageSize & offset/limit)', async () => {
+    it('supports utils pagination params (offset/limit)', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/v1/gates?offset=1&limit=2')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(res.body.pageSize).toBe(2);
+      expect(res.body.limit).toBe(2);
       expect(res.body.data.length).toBeLessThanOrEqual(2);
       expect(res.body).toHaveProperty('results');
       expect(res.body).toHaveProperty('totalItems');

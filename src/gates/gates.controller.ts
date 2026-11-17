@@ -33,12 +33,13 @@ import { UserRole } from '../users/enums/user-role.enum';
 
 @ApiTags('Gate Station Controller')
 @Controller('gates')
+
 export class GatesController {
   constructor(private readonly gatesService: GatesService) {}
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('Authorization')
   @ApiOperation({ summary: 'List all gate stations with live status' })
   @ApiResponse({ status: 200, type: PaginatedGatesResponseDto })
   async list(@Query() query: ListGatesDto): Promise<PaginatedGatesResponseDto> {
@@ -47,7 +48,7 @@ export class GatesController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('Authorization')
   @ApiOperation({
     summary: 'Gate detail: specs, 7-day stats, recent 20 events',
   })
@@ -59,7 +60,7 @@ export class GatesController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SYSTEM_ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('Authorization')
   @ApiOperation({ summary: 'Register new gate station' })
   @ApiResponse({ status: 201, type: GateResponseDto })
   async create(@Body() dto: CreateGateDto): Promise<GateResponseDto> {
@@ -69,7 +70,7 @@ export class GatesController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SYSTEM_ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('Authorization')
   @ApiOperation({ summary: 'Update gate station properties' })
   @ApiResponse({ status: 200, type: GateResponseDto })
   async update(
@@ -82,7 +83,7 @@ export class GatesController {
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SYSTEM_ADMIN, UserRole.SECURITY_GUARD)
-  @ApiBearerAuth()
+  @ApiBearerAuth('Authorization')
   @ApiOperation({
     summary: 'Set gate status (ONLINE, OFFLINE, MAINTENANCE)',
   })

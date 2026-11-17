@@ -32,10 +32,15 @@ import {
   PaginatedDailySummaryResponseDto,
 } from './dto/daily-summary-response.dto';
 import {
+  AttendanceDistributionItemDto,
+  AttendanceStatus,
+  AttendanceTrendItemDto,
   DashboardResponseDto,
   FactoryBreakdownItemDto,
+  FactoryComparisonItemDto,
   GateTrafficDistributionDto,
 } from './dto/dashboard-response.dto';
+import { FactoryId } from '../employees/enums/factory.enum';
 import { pagination } from '../utils/common/handle';
 import {
   DEFAULT_LIMIT_NUMBER,
@@ -161,18 +166,14 @@ export class AttendanceService {
   async listTransactions(
     params: ListTransactionsDto,
   ): Promise<PaginatedTransactionsResponseDto> {
-    const page =
-      params.page && params.page > 0
-        ? Number(params.page)
-        : params.offset && params.offset > 0
-          ? Number(params.offset)
-          : DEFAULT_PAGE_NUMBER;
-    const pageSize =
-      params.pageSize && params.pageSize > 0
-        ? Number(params.pageSize)
-        : params.limit && params.limit > 0
-          ? Number(params.limit)
-          : DEFAULT_LIMIT_NUMBER;
+    const offset =
+      params.offset && params.offset > 0
+        ? Number(params.offset)
+        : DEFAULT_PAGE_NUMBER;
+    const limit =
+      params.limit && params.limit > 0
+        ? Number(params.limit)
+        : DEFAULT_LIMIT_NUMBER;
 
     const qb = this.transactionRepository.createQueryBuilder('tx');
 
@@ -224,19 +225,17 @@ export class AttendanceService {
     qb.orderBy('tx.timestamp', 'DESC');
 
     const paginated = await pagination<AttendanceTransactionEntity>(qb, {
-      limit: pageSize,
-      offset: page,
+      limit,
+      offset,
     });
 
     const data = paginated.results.map((t) => this.toTransactionDto(t));
 
     return {
-      data,
-      total: paginated.totalItems,
-      page: paginated.offset,
-      pageSize: paginated.limit,
       results: data,
+      data,
       totalItems: paginated.totalItems,
+      total: paginated.totalItems,
       offset: paginated.offset,
       limit: paginated.limit,
       totalPages: paginated.totalPages,
@@ -259,18 +258,14 @@ export class AttendanceService {
   async getDailySummary(
     query: DailySummaryQueryDto,
   ): Promise<PaginatedDailySummaryResponseDto> {
-    const page =
-      query.page && query.page > 0
-        ? Number(query.page)
-        : query.offset && query.offset > 0
-          ? Number(query.offset)
-          : DEFAULT_PAGE_NUMBER;
-    const pageSize =
-      query.pageSize && query.pageSize > 0
-        ? Number(query.pageSize)
-        : query.limit && query.limit > 0
-          ? Number(query.limit)
-          : DEFAULT_LIMIT_NUMBER;
+    const offset =
+      query.offset && query.offset > 0
+        ? Number(query.offset)
+        : DEFAULT_PAGE_NUMBER;
+    const limit =
+      query.limit && query.limit > 0
+        ? Number(query.limit)
+        : DEFAULT_LIMIT_NUMBER;
 
     const targetDateStr =
       query.date || new Date().toISOString().slice(0, 10);
@@ -296,8 +291,8 @@ export class AttendanceService {
     empQb.orderBy('employee.created_at');
 
     const paginatedEmployees = await pagination<EmployeeEntity>(empQb, {
-      limit: pageSize,
-      offset: page,
+      limit,
+      offset,
     });
 
     const employees = paginatedEmployees.results;
@@ -374,7 +369,6 @@ export class AttendanceService {
         employeeId: emp.id,
         employeeName: emp.fullName,
         departmentId: emp.departmentId,
-        departmentName: emp.departmentName,
         factoryId: emp.factoryId,
         date: targetDateStr,
         firstCheckIn: firstCheckIn
@@ -390,12 +384,10 @@ export class AttendanceService {
     });
 
     return {
-      data: items,
-      total: paginatedEmployees.totalItems,
-      page: paginatedEmployees.offset,
-      pageSize: paginatedEmployees.limit,
       results: items,
+      data: items,
       totalItems: paginatedEmployees.totalItems,
+      total: paginatedEmployees.totalItems,
       offset: paginatedEmployees.offset,
       limit: paginatedEmployees.limit,
       totalPages: paginatedEmployees.totalPages,
@@ -479,18 +471,133 @@ export class AttendanceService {
         ? Math.round((presentToday / totalEmployees) * 1000) / 10
         : 100;
 
-    // Factory breakdown    
+    const onTimeToday = Math.max(0, presentToday - lateToday);
+
+    const kpis = {
+      totalEmployees,
+      presentToday,
+      lateToday,
+      onLeaveToday,
+      absentToday,
+      gateTrafficToday,
+      deniedScansToday,
+      attendanceRate,
+    };
+
+    // Trend: Daily check-ins and check-outs over the last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 6);
+    sevenDaysAgo.setUTCHours(0, 0, 0, 0);
+
+    const trendMap = new Map<string, { checkIns: number; checkOuts: number }>();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      trendMap.set(dateStr, { checkIns: 0, checkOuts: 0 });
+    }
+
+    const trendQb = this.transactionRepository.createQueryBuilder('tx');
+    trendQb.where('tx.timestamp BETWEEN :sevenDaysAgo AND :endOfToday', {
+      sevenDaysAgo,
+      endOfToday,
+    });
+    trendQb.andWhere('tx.status = :successStatus', {
+      successStatus: ScanTransactionStatus.SUCCESS,
+    });
+    if (factoryId && factoryId !== 'ALL') {
+      trendQb.andWhere('tx.factoryId = :factoryId', { factoryId });
+    }
+    const trendTransactions = await trendQb.getMany();
+
+    for (const tx of trendTransactions) {
+      const dateStr = new Date(tx.timestamp).toISOString().slice(0, 10);
+      const entry = trendMap.get(dateStr);
+      if (entry) {
+        if (tx.eventType === AttendanceEventType.CHECK_IN) {
+          entry.checkIns++;
+        } else if (tx.eventType === AttendanceEventType.CHECK_OUT) {
+          entry.checkOuts++;
+        }
+      }
+    }
+
+    const trend: AttendanceTrendItemDto[] = Array.from(trendMap.entries()).map(
+      ([date, counts]) => ({
+        date,
+        checkIns: counts.checkIns,
+        checkOuts: counts.checkOuts,
+      }),
+    );
+
+    // Distribution: Status breakdown for today
+    const distribution: AttendanceDistributionItemDto[] = [
+      {
+        name: 'On Time',
+        value: onTimeToday,
+        status: AttendanceStatus.PRESENT,
+      },
+      {
+        name: 'Late',
+        value: lateToday,
+        status: AttendanceStatus.LATE,
+      },
+      {
+        name: 'On Leave',
+        value: onLeaveToday,
+        status: AttendanceStatus.ON_LEAVE,
+      },
+      {
+        name: 'Absent',
+        value: absentToday,
+        status: AttendanceStatus.ABSENT,
+      },
+    ];
+
+    // Factory breakdown & comparison
     const factories = await this.factoryRepository.find();
+    const factoryComparison: FactoryComparisonItemDto[] = [];
     const factoryBreakdown: FactoryBreakdownItemDto[] = [];
+
     for (const f of factories) {
       const fTotal = await this.employeeRepository.count({
         where: { factoryId: f.id as any },
       });
-      const fPresent = Array.from(presentEmpSet).filter((eId) =>
-        eId.startsWith(`TMC-${f.id}-`),
+      const fPresent = Array.from(presentEmpSet).filter(
+        (eId) =>
+          eId.startsWith(`TMC-${f.code}-`) ||
+          eId.startsWith(`TMC-${f.id}-`),
       ).length;
       const fRate =
         fTotal > 0 ? Math.round((fPresent / fTotal) * 1000) / 10 : 100;
+
+      const fTxs = todayTransactions.filter(
+        (tx) =>
+          tx.factoryId === f.id ||
+          tx.factoryId === f.code ||
+          (tx.employeeId &&
+            (tx.employeeId.includes(`-${f.code}-`) ||
+              tx.employeeId.includes(`-${f.id}-`))),
+      );
+
+      const fCheckIns = fTxs.filter(
+        (tx) =>
+          tx.status === ScanTransactionStatus.SUCCESS &&
+          tx.eventType === AttendanceEventType.CHECK_IN,
+      ).length;
+
+      const fDenied = fTxs.filter(
+        (tx) => tx.status === ScanTransactionStatus.DENIED,
+      ).length;
+
+      factoryComparison.push({
+        factoryId: (f.code || f.id) as FactoryId,
+        factoryName: f.name,
+        attendanceRate: fRate,
+        checkIns: fCheckIns,
+        denied: fDenied,
+      });
+
       factoryBreakdown.push({
         factoryId: f.id,
         factoryName: f.name,
@@ -515,25 +622,25 @@ export class AttendanceService {
     }));
 
     // Recent 10 transactions
-    const recentActivity = await this.transactionRepository.find({
+    const recentActivityEntities = await this.transactionRepository.find({
       order: { timestamp: 'DESC' },
       take: 10,
     });
+    const recentEvents = recentActivityEntities.map((t) =>
+      this.toTransactionDto(t),
+    );
 
     return {
-      kpis: {
-        totalEmployees,
-        presentToday,
-        lateToday,
-        onLeaveToday,
-        absentToday,
-        gateTrafficToday,
-        deniedScansToday,
-      },
+      kpis,
+      trend,
+      distribution,
+      recentEvents,
+      factoryComparison,
+      // Backward compatibility fields
       attendanceRate,
       factoryBreakdown,
       gateDistribution,
-      recentActivity: recentActivity.map((t) => this.toTransactionDto(t)),
+      recentActivity: recentEvents,
     };
   }
 

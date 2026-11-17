@@ -25,8 +25,8 @@ export enum GateStatus {
 
 @Entity('gates')
 export class GateEntity extends BaseTimeStampEntity {
-  @PrimaryColumn({ type: 'varchar', length: 32 })
-  id: string;
+  @Column({ type: 'varchar', unique: true })
+  code: string;
 
   @Column({ type: 'varchar', length: 100 })
   name: string;
@@ -64,7 +64,6 @@ export class GateEntity extends BaseTimeStampEntity {
   @Column({
     name: 'firmware_version',
     type: 'varchar',
-    length: 32,
     nullable: true,
   })
   firmwareVersion?: string | null;

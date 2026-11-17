@@ -34,13 +34,31 @@ describe('AttendanceController', () => {
         message: 'Access granted — gate unlocked',
       }),
       listTransactions: jest.fn().mockResolvedValue({
+        results: [mockTransaction],
         data: [mockTransaction],
+        totalItems: 1,
         total: 1,
-        page: 1,
-        pageSize: 25,
+        offset: 1,
+        limit: 25,
+        totalPages: 1,
       }),
       getTransactionById: jest.fn().mockResolvedValue(mockTransaction),
       getDailySummary: jest.fn().mockResolvedValue({
+        results: [
+          {
+            employeeId: 'TMC-BD-0001',
+            employeeName: 'Nguyen Van An',
+            departmentId: 'BD-PROD',
+            departmentName: 'Production',
+            factoryId: 'BD',
+            date: '2026-11-09',
+            firstCheckIn: '07:22:10',
+            lastCheckOut: null,
+            workedMinutes: 0,
+            lateMinutes: 0,
+            status: 'PRESENT',
+          },
+        ],
         data: [
           {
             employeeId: 'TMC-BD-0001',
@@ -56,9 +74,11 @@ describe('AttendanceController', () => {
             status: 'PRESENT',
           },
         ],
+        totalItems: 1,
         total: 1,
-        page: 1,
-        pageSize: 25,
+        offset: 1,
+        limit: 25,
+        totalPages: 1,
       }),
       getDashboard: jest.fn().mockResolvedValue({
         kpis: {
@@ -69,7 +89,12 @@ describe('AttendanceController', () => {
           absentToday: 18,
           gateTrafficToday: 2450,
           deniedScansToday: 14,
+          attendanceRate: 96.5,
         },
+        trend: [],
+        distribution: [],
+        recentEvents: [mockTransaction],
+        factoryComparison: [],
         attendanceRate: 96.5,
         factoryBreakdown: [],
         gateDistribution: [],
@@ -118,15 +143,15 @@ describe('AttendanceController', () => {
   describe('GET /attendance/transactions', () => {
     it('should return paginated transactions', async () => {
       const result = await controller.listTransactions({
-        page: 1,
-        pageSize: 25,
+        offset: 1,
+        limit: 25,
       });
       expect(service.listTransactions).toHaveBeenCalledWith({
-        page: 1,
-        pageSize: 25,
+        offset: 1,
+        limit: 25,
       });
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('TX-034821');
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].id).toBe('TX-034821');
     });
   });
 
@@ -142,16 +167,16 @@ describe('AttendanceController', () => {
     it('should return aggregated daily employee attendance records', async () => {
       const result = await controller.getDailySummary({
         date: '2026-11-09',
-        page: 1,
-        pageSize: 25,
+        offset: 1,
+        limit: 25,
       });
       expect(service.getDailySummary).toHaveBeenCalledWith({
         date: '2026-11-09',
-        page: 1,
-        pageSize: 25,
+        offset: 1,
+        limit: 25,
       });
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].status).toBe('PRESENT');
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].status).toBe('PRESENT');
     });
   });
 
@@ -161,6 +186,10 @@ describe('AttendanceController', () => {
       expect(service.getDashboard).toHaveBeenCalledWith('BD');
       expect(result.kpis.totalEmployees).toBe(1259);
       expect(result.attendanceRate).toBe(96.5);
+      expect(result.trend).toEqual([]);
+      expect(result.distribution).toEqual([]);
+      expect(result.recentEvents).toHaveLength(1);
+      expect(result.factoryComparison).toEqual([]);
     });
   });
 });

@@ -16,6 +16,7 @@ import {
   DEFAULT_LIMIT_NUMBER,
   DEFAULT_PAGE_NUMBER,
 } from '../utils/common/constant';
+import { PaginationQueryDto } from '../utils/common/dto';
 
 @Injectable()
 export class AttendanceSyncService {
@@ -28,24 +29,17 @@ export class AttendanceSyncService {
   /**
    * Fetch pending offline transactions using utils pagination
    */
-  async getPending(options: {
-    page?: number;
-    pageSize?: number;
-    offset?: number;
-    limit?: number;
-  }): Promise<PaginatedTransactionsResponseDto> {
-    const page =
-      options.page && options.page > 0
-        ? Number(options.page)
-        : options.offset && options.offset > 0
-          ? Number(options.offset)
-          : DEFAULT_PAGE_NUMBER;
-    const pageSize =
-      options.pageSize && options.pageSize > 0
-        ? Number(options.pageSize)
-        : options.limit && options.limit > 0
-          ? Number(options.limit)
-          : DEFAULT_LIMIT_NUMBER;
+  async getPending(
+    options?: PaginationQueryDto,
+  ): Promise<PaginatedTransactionsResponseDto> {
+    const offset =
+      options?.offset && options.offset > 0
+        ? Number(options.offset)
+        : DEFAULT_PAGE_NUMBER;
+    const limit =
+      options?.limit && options.limit > 0
+        ? Number(options.limit)
+        : DEFAULT_LIMIT_NUMBER;
 
     const qb = this.transactionRepository.createQueryBuilder('tx');
     qb.where('tx.synced = false OR tx.syncStatus = :status', {
@@ -54,8 +48,8 @@ export class AttendanceSyncService {
     qb.orderBy('tx.timestamp', 'ASC');
 
     const paginated = await pagination<AttendanceTransactionEntity>(qb, {
-      limit: pageSize,
-      offset: page,
+      limit,
+      offset,
     });
 
     const data = paginated.results.map((t) =>
@@ -63,12 +57,10 @@ export class AttendanceSyncService {
     );
 
     return {
-      data,
-      total: paginated.totalItems,
-      page: paginated.offset,
-      pageSize: paginated.limit,
       results: data,
+      data,
       totalItems: paginated.totalItems,
+      total: paginated.totalItems,
       offset: paginated.offset,
       limit: paginated.limit,
       totalPages: paginated.totalPages,

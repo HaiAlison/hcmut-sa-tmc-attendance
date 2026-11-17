@@ -16,6 +16,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AttendanceSyncService } from './attendance-sync.service';
+import { PaginationQueryDto } from '../utils/common/dto';
 import { SyncBatchDto, SyncStatsResponseDto } from './dto/sync-batch.dto';
 import {
   AttendanceTransactionResponseDto,
@@ -38,12 +39,9 @@ export class AttendanceSyncController {
   @ApiOperation({ summary: 'Fetch pending offline transactions' })
   @ApiResponse({ status: 200, type: PaginatedTransactionsResponseDto })
   async getPending(
-    @Query('page') page?: number,
-    @Query('pageSize') pageSize?: number,
-    @Query('offset') offset?: number,
-    @Query('limit') limit?: number,
+    @Query() query: PaginationQueryDto,
   ): Promise<PaginatedTransactionsResponseDto> {
-    return this.syncService.getPending({ page, pageSize, offset, limit });
+    return this.syncService.getPending(query);
   }
 
   @Get('stats')

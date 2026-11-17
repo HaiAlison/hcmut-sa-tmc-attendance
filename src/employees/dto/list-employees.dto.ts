@@ -1,9 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 import { EmploymentStatus } from '../enums/employment-status.enum';
+import { PaginationQueryDto } from '../../utils/common/dto';
 
-export class ListEmployeesDto {
+export class ListEmployeesDto extends PaginationQueryDto {
   @ApiPropertyOptional({ description: 'Search keyword (name or employee ID)' })
   @IsOptional()
   @IsString()
@@ -32,37 +32,4 @@ export class ListEmployeesDto {
   @IsOptional()
   @IsString()
   employmentStatus?: string;
-
-  @ApiPropertyOptional({ description: 'Page number (1-based)', default: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number;
-
-  @ApiPropertyOptional({
-    description: 'Items per page (max 100)',
-    default: 25,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  pageSize?: number;
-
-  @ApiPropertyOptional({ description: 'Page number alias (offset)', default: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  offset?: number;
-
-  @ApiPropertyOptional({ description: 'Page size alias (limit)', default: 25 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
 }

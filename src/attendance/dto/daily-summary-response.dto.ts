@@ -1,4 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginationResponse } from '../../utils/common/interface';
 
 export type DailyAttendanceStatus =
   | 'PRESENT'
@@ -16,9 +17,6 @@ export class DailySummaryItemDto {
 
   @ApiProperty({ example: 'BD-PROD' })
   departmentId: string;
-
-  @ApiProperty({ example: 'Production' })
-  departmentName: string;
 
   @ApiProperty({ example: 'BD' })
   factoryId: string;
@@ -42,32 +40,30 @@ export class DailySummaryItemDto {
   status: DailyAttendanceStatus;
 }
 
-export class PaginatedDailySummaryResponseDto {
+export class PaginatedDailySummaryResponseDto
+  implements PaginationResponse<DailySummaryItemDto> {
   @ApiProperty({ type: [DailySummaryItemDto] })
-  data: DailySummaryItemDto[];
+  results: DailySummaryItemDto[];
 
   @ApiProperty({ example: 1259 })
-  total: number;
+  totalItems: number;
 
   @ApiProperty({ example: 1 })
-  page: number;
+  offset: number;
 
   @ApiProperty({ example: 25 })
-  pageSize: number;
+  limit: number;
 
-  @ApiProperty({ type: [DailySummaryItemDto], required: false })
-  results?: DailySummaryItemDto[];
+  @ApiProperty({ example: 51 })
+  totalPages: number;
 
-  @ApiProperty({ example: 1259, required: false })
-  totalItems?: number;
+  @ApiPropertyOptional({ type: [DailySummaryItemDto] })
+  data?: DailySummaryItemDto[];
 
-  @ApiProperty({ example: 1, required: false })
-  offset?: number;
+  @ApiPropertyOptional({ example: 1259 })
+  total?: number;
 
-  @ApiProperty({ example: 25, required: false })
-  limit?: number;
-
-  @ApiProperty({ example: 51, required: false })
-  totalPages?: number;
+  @ApiPropertyOptional()
+  otherParams?: any;
 }
 
