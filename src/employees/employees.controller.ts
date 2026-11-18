@@ -103,7 +103,7 @@ export class EmployeesController {
     return this.employeesService.create(dto);
   }
 
-  @Put(':id')
+  @Patch(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.SYSTEM_ADMIN, UserRole.HR_STAFF)
   @ApiOperation({

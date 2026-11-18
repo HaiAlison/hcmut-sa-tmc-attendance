@@ -18,8 +18,17 @@ export class EmployeeResponseDto {
   @ApiProperty({ example: 'BD-PROD' })
   departmentId: string;
 
+  @ApiProperty({ example: 'BD-PROD' })
+  departmentName: string;
+
   @ApiProperty({ example: 'Senior Assembler' })
   position: string;
+
+  @ApiProperty({ example: FactoryCode.BD })
+  factoryId: string;
+
+  @ApiProperty({ example: 'BD-PROD' })
+  factoryName: string;
 
   @ApiProperty({ example: FactoryCode.BD })
   factoryCode: string;
