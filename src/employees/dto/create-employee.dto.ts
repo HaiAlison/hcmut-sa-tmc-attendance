@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 import { FactoryCode } from '../enums/factory.enum';
 import { Gender } from '../enums/gender.enum';
+import { EmploymentStatus } from '../enums/employment-status.enum';
 
 export class CreateEmployeeDto {
   @ApiProperty({ example: 'Tran Thi Mai' })
@@ -20,6 +21,10 @@ export class CreateEmployeeDto {
   @IsUUID()
   @IsNotEmpty()
   departmentId: string;
+
+  @ApiProperty({ enum: EmploymentStatus, example: EmploymentStatus.PROBATION })
+  @IsEnum(EmploymentStatus)
+  employmentStatus: EmploymentStatus;
 
   @ApiProperty({ example: 'Assembly Technician' })
   @IsString()

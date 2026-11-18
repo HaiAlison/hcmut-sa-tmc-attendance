@@ -133,6 +133,7 @@ export class EmployeesService {
 
     const latestQr = await this.qrCodeRepository.findOne({
       where: { employeeId: id },
+      relations: ['factory'],
       order: { createdAt: 'DESC' },
     });
 
@@ -171,20 +172,6 @@ export class EmployeesService {
 
     // Auto-generate employee ID: TMC-{factoryCode}-{seq}
     const code = await this.generateNextEmployeeId(factory.code);
-    console.log({
-      code,
-      fullName: dto.fullName.trim(),
-      departmentId: dto.departmentId,
-      departmentName,
-      position: dto.position.trim(),
-      factoryId: dto.factoryId,
-      email: dto.email.toLowerCase().trim(),
-      phone: dto.phone.trim(),
-      employmentStatus: EmploymentStatus.PROBATION,
-      hireDate: dto.hireDate,
-      dateOfBirth: dto.dateOfBirth,
-      gender: dto.gender,
-    })
     const employee = this.employeeRepository.create({
       code,
       fullName: dto.fullName.trim(),
@@ -200,7 +187,7 @@ export class EmployeesService {
     });
 
     const savedEmployee = await this.employeeRepository.save(employee);
-
+    savedEmployee.factory = factory;
     // Auto-generate initial active QR code
     await this.generateInitialQrCode(savedEmployee);
 
@@ -213,6 +200,7 @@ export class EmployeesService {
   ): Promise<EmployeeResponseDto> {
     const employee = await this.employeeRepository.findOne({
       where: { id },
+      relations: ['department', 'factory'],
     });
 
     if (!employee) {
@@ -241,6 +229,7 @@ export class EmployeesService {
     if (dto.phone) employee.phone = dto.phone.trim();
     if (dto.hireDate) employee.hireDate = dto.hireDate;
     if (dto.dateOfBirth) employee.dateOfBirth = dto.dateOfBirth;
+    if (dto.employmentStatus) employee.employmentStatus = dto.employmentStatus;
     if (dto.gender) employee.gender = dto.gender;
 
     const updated = await this.employeeRepository.save(employee);
@@ -322,7 +311,7 @@ export class EmployeesService {
 
     let maxSeq = 0;
     for (const emp of employees) {
-      const parts = emp.id.split('-');
+      const parts = emp.code.split('-');
       if (parts.length === 3) {
         const seq = parseInt(parts[2], 10);
         if (!isNaN(seq) && seq > maxSeq) {
@@ -375,8 +364,11 @@ export class EmployeesService {
       code: emp.code,
       fullName: emp.fullName,
       departmentId: emp.departmentId,
+      departmentName: emp.department?.name,
       position: emp.position,
-      factoryCode: emp.factory.code,
+      factoryId: emp.factory?.id,
+      factoryCode: emp.factory?.code,
+      factoryName: emp.factory?.name,
       email: emp.email,
       phone: emp.phone,
       employmentStatus: emp.employmentStatus,
@@ -391,7 +383,7 @@ export class EmployeesService {
     return {
       id: qr.id,
       employeeId: qr.employeeId,
-      factoryCode: qr.factory.code,
+      factoryCode: qr.factory?.code,
       factoryId: qr.factory.id,
       status: qr.status,
       createdAt: qr.createdAt,

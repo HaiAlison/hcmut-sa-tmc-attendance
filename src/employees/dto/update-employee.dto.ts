@@ -8,6 +8,7 @@ import {
   Matches,
 } from 'class-validator';
 import { Gender } from '../enums/gender.enum';
+import { EmploymentStatus } from '../enums/employment-status.enum';
 
 export class UpdateEmployeeDto {
   @ApiPropertyOptional({ example: 'Tran Thi Mai' })
@@ -19,6 +20,11 @@ export class UpdateEmployeeDto {
   @IsOptional()
   @IsString()
   departmentId?: string;
+
+  @ApiPropertyOptional({ enum: EmploymentStatus, example: EmploymentStatus.ACTIVE })
+  @IsOptional()
+  @IsEnum(EmploymentStatus)
+  employmentStatus?: EmploymentStatus;
 
   @ApiPropertyOptional({ example: 'Assembly Technician' })
   @IsOptional()

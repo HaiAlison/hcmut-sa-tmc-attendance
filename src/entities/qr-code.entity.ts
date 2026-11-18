@@ -19,17 +19,18 @@ export class QrCodeEntity extends BaseTimeStampEntity {
   code: string;
 
   @Index()
-  @Column({ type: 'varchar' })
+  @Column({ name: 'employee_id', type: 'varchar' })
   employeeId: string;
 
   @ManyToOne(() => EmployeeEntity, (employee) => employee.qrCodes)
+  @JoinColumn({ name: 'employee_id' })
   employee: EmployeeEntity;
 
   @ManyToOne(() => FactoryEntity)
   @JoinColumn({ name: 'factory_id' })
   factory: FactoryEntity;
 
-  @Column({ type: 'varchar' })
+  @Column({ name: 'factory_id', type: 'varchar' })
   factoryId: string;
 
   @Column({
