@@ -25,6 +25,12 @@ export class AttendanceTransactionResponseDto {
   @ApiPropertyOptional()
   factoryName?: string;
 
+  @ApiPropertyOptional({ example: 'TMC-BD-0001', nullable: true })
+  departmentId?: string | null;
+
+  @ApiPropertyOptional({ example: 'TMC-BD-0001', nullable: true })
+  departmentName?: string | null;
+
   @ApiProperty({ example: 'GATE-BD-01' })
   gateId: string;
 

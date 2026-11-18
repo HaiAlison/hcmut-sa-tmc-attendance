@@ -52,7 +52,9 @@ export class QrCodesService {
         ? Number(params.limit)
         : DEFAULT_LIMIT_NUMBER;
 
-    const qb = this.qrCodeRepository.createQueryBuilder('qr');
+    const qb = this.qrCodeRepository.createQueryBuilder('qr')
+      .leftJoin('qr.employee', 'employee')
+      .addSelect(['employee.id', 'employee.code', 'employee.fullName'])
 
     if (params.q) {
       const q = `%${params.q.trim().toLowerCase()}%`;
@@ -81,9 +83,7 @@ export class QrCodesService {
 
     return {
       results: data,
-      data,
       totalItems: paginated.totalItems,
-      total: paginated.totalItems,
       offset: paginated.offset,
       limit: paginated.limit,
       totalPages: paginated.totalPages,
@@ -165,7 +165,7 @@ export class QrCodesService {
     const generated = this.tokenGenerator.generateToken(employee.factoryId);
 
     const qr = this.qrCodeRepository.create({
-      id: generated.id,
+      code: generated.id,
       employeeId: employee.id,
       factoryId: employee.factoryId,
       status: QrStatus.ACTIVE,
@@ -233,7 +233,10 @@ export class QrCodesService {
   private toResponseDto(qr: QrCodeEntity): QrCodeResponseDto {
     return {
       id: qr.id,
+      code: qr?.code,
       employeeId: qr.employeeId,
+      employeeCode: qr.employee?.code ?? null,
+      employeeName: qr.employee?.fullName ?? null,
       factoryCode: qr.factory?.code,
       status: qr.status,
       createdAt: qr.createdAt,

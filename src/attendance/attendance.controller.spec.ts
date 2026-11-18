@@ -84,6 +84,10 @@ describe('AttendanceController', () => {
         kpis: {
           totalEmployees: 1259,
           presentToday: 1215,
+          insideNow: 1150,
+          checkInsToday: 1250,
+          checkOutsToday: 1186,
+          deniedToday: 14,
           lateToday: 18,
           onLeaveToday: 26,
           absentToday: 18,
@@ -185,6 +189,10 @@ describe('AttendanceController', () => {
       const result = await controller.getDashboard('BD');
       expect(service.getDashboard).toHaveBeenCalledWith('BD');
       expect(result.kpis.totalEmployees).toBe(1259);
+      expect(result.kpis.insideNow).toBe(1150);
+      expect(result.kpis.checkInsToday).toBe(1250);
+      expect(result.kpis.checkOutsToday).toBe(1186);
+      expect(result.kpis.deniedToday).toBe(14);
       expect(result.attendanceRate).toBe(96.5);
       expect(result.trend).toEqual([]);
       expect(result.distribution).toEqual([]);

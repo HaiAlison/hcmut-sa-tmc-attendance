@@ -17,6 +17,18 @@ export class DashboardKpisDto {
   @ApiProperty({ example: 1215 })
   presentToday: number;
 
+  @ApiProperty({ example: 1150 })
+  insideNow: number;
+
+  @ApiProperty({ example: 1250 })
+  checkInsToday: number;
+
+  @ApiProperty({ example: 1186 })
+  checkOutsToday: number;
+
+  @ApiProperty({ example: 14 })
+  deniedToday: number;
+
   @ApiProperty({ example: 18 })
   lateToday: number;
 

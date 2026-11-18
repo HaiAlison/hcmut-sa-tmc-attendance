@@ -266,6 +266,10 @@ describe('Scan Processing & Attendance Transactions (/attendance) (e2e)', () => 
       expect(res.body).toHaveProperty('kpis');
       expect(res.body.kpis).toHaveProperty('totalEmployees');
       expect(res.body.kpis).toHaveProperty('presentToday');
+      expect(res.body.kpis).toHaveProperty('insideNow');
+      expect(res.body.kpis).toHaveProperty('checkInsToday');
+      expect(res.body.kpis).toHaveProperty('checkOutsToday');
+      expect(res.body.kpis).toHaveProperty('deniedToday');
       expect(res.body.kpis).toHaveProperty('gateTrafficToday');
       expect(res.body).toHaveProperty('trend');
       expect(res.body).toHaveProperty('distribution');

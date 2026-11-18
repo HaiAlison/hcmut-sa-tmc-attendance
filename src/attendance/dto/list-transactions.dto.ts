@@ -25,6 +25,11 @@ export class ListTransactionsDto extends PaginationQueryDto {
   @IsString()
   factoryId?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by department ID' })
+  @IsOptional()
+  @IsString()
+  departmentId?: string;
+
   @ApiPropertyOptional({
     description: 'Filter by event type (CHECK_IN, CHECK_OUT, or ALL)',
   })

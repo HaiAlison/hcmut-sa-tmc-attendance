@@ -178,7 +178,9 @@ export class AttendanceService {
       .leftJoin('tx.employee', 'employee')
       .addSelect(['employee.fullName', 'employee.code'])
       .leftJoin('employee.factory', 'factory')
-      .addSelect(['factory.code', 'factory.name']);
+      .addSelect(['factory.code', 'factory.name'])
+      .leftJoin('employee.department', 'department')
+      .addSelect(['department.id', 'department.name']);
 
     if (params.q) {
       const q = `%${params.q.trim().toLowerCase()}%`;
@@ -201,6 +203,11 @@ export class AttendanceService {
     if (params.factoryId && params.factoryId !== 'ALL') {
       qb.andWhere('tx.factoryId = :factoryId', {
         factoryId: params.factoryId,
+      });
+    }
+    if (params.departmentId && params.departmentId !== 'ALL') {
+      qb.andWhere('employee.departmentId = :departmentId', {
+        departmentId: params.departmentId,
       });
     }
 
@@ -424,27 +431,58 @@ export class AttendanceService {
 
     const gateTrafficToday = todayTransactions.length;
     let deniedScansToday = 0;
+    let checkInsToday = 0;
+    let checkOutsToday = 0;
     const presentEmpSet = new Set<string>();
     const lateEmpSet = new Set<string>();
+    const latestEventByEmp = new Map<
+      string,
+      { eventType: AttendanceEventType; timestamp: Date }
+    >();
 
     for (const tx of todayTransactions) {
       if (tx.status === ScanTransactionStatus.DENIED) {
         deniedScansToday++;
       } else if (
-        tx.status === ScanTransactionStatus.SUCCESS &&
-        tx.eventType === AttendanceEventType.CHECK_IN &&
-        tx.employeeId
+        tx.status === ScanTransactionStatus.SUCCESS
       ) {
-        presentEmpSet.add(tx.employeeId);
-        const checkInDate = new Date(tx.timestamp);
-        const checkInMinutes =
-          checkInDate.getUTCHours() * 60 + checkInDate.getUTCMinutes();
-        if (
-          checkInMinutes >
-          this.shiftStartMinutes + this.lateThresholdMinutes
-        ) {
-          lateEmpSet.add(tx.employeeId);
+        if (tx.eventType === AttendanceEventType.CHECK_IN) {
+          checkInsToday++;
+          if (tx.employeeId) {
+            presentEmpSet.add(tx.employeeId);
+            const checkInDate = new Date(tx.timestamp);
+            const checkInMinutes =
+              checkInDate.getUTCHours() * 60 + checkInDate.getUTCMinutes();
+            if (
+              checkInMinutes >
+              this.shiftStartMinutes + this.lateThresholdMinutes
+            ) {
+              lateEmpSet.add(tx.employeeId);
+            }
+          }
+        } else if (tx.eventType === AttendanceEventType.CHECK_OUT) {
+          checkOutsToday++;
         }
+
+        if (tx.employeeId) {
+          const currentLatest = latestEventByEmp.get(tx.employeeId);
+          const txTime = new Date(tx.timestamp).getTime();
+          if (!currentLatest || txTime >= currentLatest.timestamp.getTime()) {
+            latestEventByEmp.set(tx.employeeId, {
+              eventType: tx.eventType,
+              timestamp: new Date(tx.timestamp),
+            });
+          }
+        }
+      }
+    }
+
+    const deniedToday = deniedScansToday;
+
+    let insideNow = 0;
+    for (const record of latestEventByEmp.values()) {
+      if (record.eventType === AttendanceEventType.CHECK_IN) {
+        insideNow++;
       }
     }
 
@@ -477,6 +515,10 @@ export class AttendanceService {
     const kpis = {
       totalEmployees,
       presentToday,
+      insideNow,
+      checkInsToday,
+      checkOutsToday,
+      deniedToday,
       lateToday,
       onLeaveToday,
       absentToday,
@@ -655,6 +697,8 @@ export class AttendanceService {
       employeeCode: entity.employee?.code ?? null,
       factoryCode: entity.employee?.factory?.code ?? null,
       factoryName: entity.employee?.factory?.name ?? null,
+      departmentId: entity.employee?.departmentId ?? null,
+      departmentName: entity.employee?.department?.name ?? null,
       gateId: entity.gateId,
       gateCode: entity.gate?.code ?? null,
       gateName: entity.gate?.name ?? null,

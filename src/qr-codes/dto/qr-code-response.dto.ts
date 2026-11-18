@@ -3,11 +3,20 @@ import { QrStatus } from '../../employees/enums/qr-status.enum';
 import { PaginationResponse } from '../../utils/common/interface';
 
 export class QrCodeResponseDto {
-  @ApiProperty({ example: 'QR-7B8C9D' })
+  @ApiProperty({ example: '0191a80b-915e-76d5-8f36-d6e2f89bb951' })
   id: string;
+
+  @ApiProperty({ example: 'QR-7B8C9D' })
+  code: string;
 
   @ApiProperty({ example: 'TMC-BD-0001' })
   employeeId: string;
+
+  @ApiProperty({ example: 'TMC-BD-0001' })
+  employeeCode: string;
+
+  @ApiProperty({ example: 'TMC-BD-0001' })
+  employeeName: string;
 
   @ApiProperty({ example: 'BD' })
   factoryCode: string;
@@ -31,8 +40,7 @@ export class QrCodeResponseDto {
 }
 
 export class PaginatedQrCodesResponseDto
-  implements PaginationResponse<QrCodeResponseDto>
-{
+  implements PaginationResponse<QrCodeResponseDto> {
   @ApiProperty({ type: [QrCodeResponseDto] })
   results: QrCodeResponseDto[];
 
@@ -47,12 +55,6 @@ export class PaginatedQrCodesResponseDto
 
   @ApiProperty({ example: 2 })
   totalPages: number;
-
-  @ApiPropertyOptional({ type: [QrCodeResponseDto] })
-  data?: QrCodeResponseDto[];
-
-  @ApiPropertyOptional({ example: 48 })
-  total?: number;
 
   @ApiPropertyOptional()
   otherParams?: any;
